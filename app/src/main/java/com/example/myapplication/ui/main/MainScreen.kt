@@ -5,12 +5,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Accessibility
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,19 +22,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.data.MockData
-import com.example.myapplication.data.Recipe
-import com.example.myapplication.data.NutritionalRecommendation
+import com.example.myapplication.data.CommunicationCategory
+import com.example.myapplication.data.AccessInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
+    var showDetailDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mi Minuta Semanal") },
+                title = { Text("Panel de Accesibilidad") },
                 actions = {
                     TextButton(onClick = onLogout) {
-                        Text("Salir", color = MaterialTheme.colorScheme.error)
+                        Text("Cerrar Sesión", color = MaterialTheme.colorScheme.error)
                     }
                 }
             )
@@ -44,23 +50,22 @@ fun MainScreen(onLogout: () -> Unit) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Recetas Sugeridas",
+                text = "Categorías de Comunicación",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // Grid de Recetas (5 elementos)
-            // Usamos una altura fija para el Grid dentro del Scroll vertical o limitamos su tamaño
-            Box(modifier = Modifier.height(400.dp)) {
+            // Grid de Categorías (Entorno Cotidiano)
+            Box(modifier = Modifier.height(300.dp)) {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 150.dp),
+                    columns = GridCells.Adaptive(minSize = 140.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(MockData.weeklyRecipes) { recipe ->
-                        RecipeCard(recipe)
+                    items(MockData.communicationCategories) { category ->
+                        CategoryCard(category)
                     }
                 }
             }
@@ -68,89 +73,110 @@ fun MainScreen(onLogout: () -> Unit) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Recomendaciones Nutricionales",
+                text = "Estado de Herramientas de Apoyo",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // "Tabla" de recomendaciones usando Column + Row
-            NutritionalTable(MockData.nutritionalRecommendations)
+            // Requerimiento: LazyColumn para la tabla de estado
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)
+            ) {
+                Column {
+                    // Header Tabla
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .padding(8.dp)
+                    ) {
+                        Text("Función", modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold)
+                        Text("Estado", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    }
+                    
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(MockData.accessibilityStatus) { info ->
+                            AccessibilityRow(info)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
+                    }
+                }
+            }
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Link simulado
+            // Requerimiento Semana 2: Link ACTIVO que ejecuta acción real
             TextButton(
-                onClick = { /* Navegar a detalles */ },
+                onClick = { showDetailDialog = true },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text("Ver informe detallado completo", color = MaterialTheme.colorScheme.secondary)
+                Text("Ver informe detallado completo", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (showDetailDialog) {
+        AlertDialog(
+            onDismissRequest = { showDetailDialog = false },
+            confirmButton = {
+                Button(onClick = { showDetailDialog = false }) {
+                    Text("Entendido")
+                }
+            },
+            title = { Text("Informe de Accesibilidad") },
+            text = { 
+                Text("Este informe contiene el estado detallado de todos los sensores y motores de síntesis de voz del dispositivo. Actualmente, el sistema está optimizado para un entorno cotidiano (Hogar y Trabajo).")
+            },
+            icon = { Icon(Icons.Default.Info, contentDescription = null) }
+        )
     }
 }
 
 @Composable
-fun RecipeCard(recipe: Recipe) {
+fun CategoryCard(category: CommunicationCategory) {
     Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(text = recipe.day, fontSize = 12.sp, fontWeight = FontWeight.Light)
-            Text(text = recipe.title, fontWeight = FontWeight.Bold, maxLines = 1)
-            Text(text = recipe.category, fontSize = 12.sp)
+            Icon(
+                imageVector = Icons.Default.Accessibility, 
+                contentDescription = null, 
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(text = "${recipe.calories} kcal", fontSize = 12.sp)
-            }
+            Text(text = category.title, fontWeight = FontWeight.Bold)
+            Text(text = category.description, fontSize = 12.sp, maxLines = 2)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = "Prioridad: ${category.importance}", fontSize = 10.sp, color = MaterialTheme.colorScheme.secondary)
         }
     }
 }
 
 @Composable
-fun NutritionalTable(recommendations: List<NutritionalRecommendation>) {
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth()
+fun AccessibilityRow(info: AccessInfo) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(8.dp)
-            ) {
-                Text("Nutriente", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                Text("Cantidad", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                Text("Estado", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-            }
-            
-            // Rows
-            recommendations.forEach { rec ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                ) {
-                    Text(rec.nutrient, modifier = Modifier.weight(1f))
-                    Text(rec.amount, modifier = Modifier.weight(1f))
-                    Text(
-                        text = rec.status,
-                        modifier = Modifier.weight(1f),
-                        color = when(rec.status) {
-                            "Exceso" -> Color.Red
-                            "Bajo" -> Color(0xFFFFA500) // Orange
-                            else -> Color(0xFF008000) // Green
-                        }
-                    )
-                }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            }
+        Text(info.feature, modifier = Modifier.weight(1.5f))
+        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = if (info.status == "Activo") Icons.Default.CheckCircle else Icons.Default.Info,
+                contentDescription = null,
+                tint = if (info.status == "Activo") Color(0xFF008000) else Color.Gray,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = info.status, fontSize = 14.sp)
         }
     }
 }

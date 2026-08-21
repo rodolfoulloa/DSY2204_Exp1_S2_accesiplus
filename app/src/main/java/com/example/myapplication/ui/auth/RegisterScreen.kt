@@ -15,19 +15,24 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
+    viewModel: AuthViewModel,
     onRegisterSuccess: () -> Unit,
     onBackToLogin: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var goal by remember { mutableStateOf("Mantenerse") }
+    var role by remember { mutableStateOf("Usuario Final") }
     var gender by remember { mutableStateOf("Otro") }
     var termsAccepted by remember { mutableStateOf(false) }
     
     var expanded by remember { mutableStateOf(false) }
-    val goals = listOf("Ganar músculo", "Perder peso", "Mantenerse")
+    val roles = listOf("Usuario Final", "Cuidador", "Profesional Salud")
     val genders = listOf("Femenino", "Masculino", "Otro")
+
+    val isEmailValid = viewModel.isEmailValid(email)
+    val isPasswordValid = viewModel.isPasswordValid(password)
+    val isFormValid = isEmailValid && isPasswordValid && name.isNotBlank() && termsAccepted
 
     Column(
         modifier = Modifier
@@ -37,7 +42,7 @@ fun RegisterScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Crear Cuenta",
+            text = "Registro de Usuario",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -58,7 +63,13 @@ fun RegisterScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("Correo electrónico") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = email.isNotEmpty() && !isEmailValid,
+            supportingText = {
+                if (email.isNotEmpty() && !isEmailValid) {
+                    Text("Formato de correo inválido (ejemplo@dominio.com)")
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -66,24 +77,25 @@ fun RegisterScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Contraseña") },
+            label = { Text("Contraseña (mín. 6 caracteres)") },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = password.isNotEmpty() && !isPasswordValid
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Dropdown (Combo box)
+        // Dropdown (Combo box) - Rol del usuario
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = goal,
+                value = role,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Objetivo Nutricional") },
+                label = { Text("Tipo de Perfil") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.menuAnchor().fillMaxWidth()
             )
@@ -91,11 +103,11 @@ fun RegisterScreen(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                goals.forEach { selectionOption ->
+                roles.forEach { selectionOption ->
                     DropdownMenuItem(
                         text = { Text(selectionOption) },
                         onClick = {
-                            goal = selectionOption
+                            role = selectionOption
                             expanded = false
                         }
                     )
@@ -137,7 +149,7 @@ fun RegisterScreen(
                 onCheckedChange = { termsAccepted = it }
             )
             Text(
-                text = "Acepto los términos y condiciones",
+                text = "Acepto los términos y condiciones de accesibilidad",
                 fontSize = 14.sp
             )
         }
@@ -146,7 +158,7 @@ fun RegisterScreen(
 
         Button(
             onClick = onRegisterSuccess,
-            enabled = termsAccepted && name.isNotBlank() && email.isNotBlank(),
+            enabled = isFormValid,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Registrarse")
