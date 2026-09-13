@@ -32,7 +32,11 @@ fun SetupNavGraph(
         composable(route = Screen.Login.route) {
             LoginScreen(
                 viewModel = authViewModel,
-                onLoginSuccess = { navController.navigate(Screen.Main.route) },
+                onLoginSuccess = { 
+                    navController.navigate(Screen.Main.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
                 onRegisterClick = { navController.navigate(Screen.Register.route) },
                 onRecoverPasswordClick = { navController.navigate(Screen.RecoverPassword.route) }
             )

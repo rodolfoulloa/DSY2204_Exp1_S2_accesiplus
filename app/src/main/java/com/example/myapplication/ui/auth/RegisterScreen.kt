@@ -22,6 +22,7 @@ fun RegisterScreen(
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("Usuario Final") }
     var gender by remember { mutableStateOf("Otro") }
     var termsAccepted by remember { mutableStateOf(false) }
@@ -32,7 +33,8 @@ fun RegisterScreen(
 
     val isEmailValid = viewModel.isEmailValid(email)
     val isPasswordValid = viewModel.isPasswordValid(password)
-    val isFormValid = isEmailValid && isPasswordValid && name.isNotBlank() && termsAccepted
+    val passwordsMatch = password == confirmPassword && password.isNotEmpty()
+    val isFormValid = isEmailValid && isPasswordValid && passwordsMatch && name.isNotBlank() && termsAccepted
 
     Column(
         modifier = Modifier
@@ -83,7 +85,24 @@ fun RegisterScreen(
             isError = password.isNotEmpty() && !isPasswordValid
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Confirmar Contraseña") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+            isError = confirmPassword.isNotEmpty() && !passwordsMatch,
+            supportingText = {
+                if (confirmPassword.isNotEmpty() && !passwordsMatch) {
+                    Text("Las contraseñas no coinciden")
+                }
+            }
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
+
 
         // Dropdown (Combo box) - Rol del usuario
         ExposedDropdownMenuBox(
@@ -156,8 +175,29 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        val loginError by viewModel.loginError.collectAsState()
+        LaunchedEffect(loginError) {
+            loginError?.let {
+                // Se puede mostrar debajo o usar un snackbar si hubiera Scaffold
+                // Por simplicidad, agregaremos el texto de error si existe
+            }
+        }
+
+        if (loginError != null) {
+            Text(
+                text = loginError ?: "",
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
         Button(
-            onClick = onRegisterSuccess,
+            onClick = {
+                if (viewModel.registerUser(name, email, password, role, gender)) {
+                    onRegisterSuccess()
+                }
+            },
             enabled = isFormValid,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -169,3 +209,4 @@ fun RegisterScreen(
         }
     }
 }
+

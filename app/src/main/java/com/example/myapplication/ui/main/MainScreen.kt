@@ -83,7 +83,7 @@ fun MainScreen(onLogout: () -> Unit) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 tonalElevation = 2.dp,
-                modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(max = 250.dp)
             ) {
                 Column {
                     // Header Tabla
@@ -105,8 +105,89 @@ fun MainScreen(onLogout: () -> Unit) {
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // REQUERIMIENTO S5: HERRAMIENTA INTERACTIVA DE COMUNICACIÓN (ESCRIBIR Y HABLAR)
+            Text(
+                text = "Herramienta de Comunicación Rápida (TTS)",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 4.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    var textToSpeak by remember { mutableStateOf("") }
+                    var spokenTextDisplay by remember { mutableStateOf("") }
+                    val tts = com.example.myapplication.LocalTextToSpeech.current
+
+                    OutlinedTextField(
+                        value = textToSpeak,
+                        onValueChange = { textToSpeak = it },
+                        label = { Text("Escribe un mensaje para reproducir / comunicar") },
+                        placeholder = { Text("Ej: Hola, necesito ayuda para encontrar la parada de bus.") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 3
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            if (textToSpeak.isNotBlank()) {
+                                try {
+                                    spokenTextDisplay = textToSpeak
+                                    tts?.speak(textToSpeak, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, null)
+                                    textToSpeak = ""
+                                } catch (e: Exception) {
+                                    android.util.Log.e("TTS_ERROR", "Fallo al reproducir audio", e)
+                                }
+                            }
+                        },
+                        enabled = textToSpeak.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Reproducir Mensaje (Voz / Texto Grande)")
+                    }
+
+
+
+                    if (spokenTextDisplay.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .padding(16.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "📢 COMUNICANDO EN PANTALLA:",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = spokenTextDisplay,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    lineHeight = 28.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             
             Spacer(modifier = Modifier.height(24.dp))
+
             
             // Requerimiento Semana 2: Link ACTIVO que ejecuta acción real
             TextButton(
@@ -139,13 +220,21 @@ fun MainScreen(onLogout: () -> Unit) {
 
 @Composable
 fun CategoryCard(category: CommunicationCategory) {
+    val icon = when (category.iconName) {
+        "Medical" -> Icons.Default.Info
+        "Shopping" -> Icons.Default.CheckCircle
+        "Transport" -> Icons.Default.Info
+        "Home" -> Icons.Default.Accessibility
+        else -> Icons.Default.Accessibility
+    }
+
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Icon(
-                imageVector = Icons.Default.Accessibility, 
+                imageVector = icon, 
                 contentDescription = null, 
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
@@ -158,6 +247,8 @@ fun CategoryCard(category: CommunicationCategory) {
         }
     }
 }
+
+
 
 @Composable
 fun AccessibilityRow(info: AccessInfo) {

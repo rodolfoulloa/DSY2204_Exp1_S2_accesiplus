@@ -21,15 +21,22 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val loginError by viewModel.loginError.collectAsState()
+    val successMessage by viewModel.authSuccessMessage.collectAsState()
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(loginError) {
+    LaunchedEffect(loginError, successMessage) {
         loginError?.let {
             scope.launch {
                 snackbarHostState.showSnackbar(it)
-                viewModel.clearErrors()
+                viewModel.clearMessages()
+            }
+        }
+        successMessage?.let {
+            scope.launch {
+                snackbarHostState.showSnackbar(it)
+                viewModel.clearMessages()
             }
         }
     }
@@ -65,7 +72,12 @@ fun LoginScreen(
                 onValueChange = { email = it },
                 label = { Text("Correo electrónico") },
                 modifier = Modifier.fillMaxWidth(),
-                isError = loginError != null
+                isError = (loginError != null) || (email.isNotEmpty() && !viewModel.isEmailValid(email)),
+                supportingText = {
+                    if (email.isNotEmpty() && !viewModel.isEmailValid(email)) {
+                        Text("Formato de correo inválido")
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -96,10 +108,11 @@ fun LoginScreen(
                         onLoginSuccess()
                     }
                 },
+                enabled = email.isNotEmpty() && password.isNotEmpty() && viewModel.isEmailValid(email),
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium
             ) {
-                Text("Iniciar Sesión")
+                Text("Iniciar Sesión AccesipPlus")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
