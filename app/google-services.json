@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "147620891282",
+    "firebase_url": "https://accesiplus-default-rtdb.firebaseio.com",
     "project_id": "accesiplus",
     "storage_bucket": "accesiplus.firebasestorage.app"
   },
