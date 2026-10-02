@@ -1,7 +1,9 @@
 package cl.duoc.rulloa.accesiplus.ui.hablar
 
 import android.content.ActivityNotFoundException
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -122,6 +124,14 @@ fun HablarScreen(
                     selected = categoria == nombre,
                     onClick = { categoria = nombre },
                     label = { Text(nombre, style = MaterialTheme.typography.bodyLarge) },
+                    // Imagen de la categoría: de ella Palette obtiene el color del chip
+                    leadingIcon = {
+                        Image(
+                            painterResource(ColoresCategoria.imagen(nombre)),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
                     colors = if (color != null) FilterChipDefaults.filterChipColors(
                         selectedContainerColor = color,
                         selectedLabelColor = Color.White

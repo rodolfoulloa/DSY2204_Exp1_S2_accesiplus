@@ -39,6 +39,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.fragment.compose.AndroidFragment
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -72,7 +74,8 @@ private val PERMISOS_UBICACION = arrayOf(
 /**
  * BuscarDispositivo: el usuario registra sus dispositivos (audífono, implante, teléfono…)
  * y guarda la ubicación donde los dejó, para encontrarlos después en el mapa.
- * @param contenidoExtra espacio para el Fragment de consejos (fase de componentes Android).
+ * Al final muestra ConsejosFragment (vistas clásicas) integrado con AndroidFragment.
+ * @param contenidoExtra contenido adicional opcional al final de la pantalla.
  */
 @Composable
 fun BuscarDispositivoScreen(
@@ -124,6 +127,14 @@ fun BuscarDispositivoScreen(
                 onMapa = { if (!abrirMapa(context, d)) viewModel.sinAppMapas() },
                 onEditar = { editando = d },
                 onEliminar = { eliminando = d }
+            )
+        }
+        // Fragment clásico dentro de Compose: los consejos dependen del tipo del primer dispositivo
+        val tipo = dispositivos.firstOrNull()?.type ?: "Otro"
+        key(tipo) {
+            AndroidFragment<ConsejosFragment>(
+                arguments = ConsejosFragment.argumentos(tipo),
+                modifier = Modifier.fillMaxWidth().testTag("fragment_consejos")
             )
         }
         contenidoExtra()
