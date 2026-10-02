@@ -1,0 +1,118 @@
+package cl.duoc.rulloa.accesiplus.ui.phrases
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import cl.duoc.rulloa.accesiplus.data.model.Phrase
+import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
+import cl.duoc.rulloa.accesiplus.data.repository.PhraseRepository
+import cl.duoc.rulloa.accesiplus.data.tts.EstadoTts
+import cl.duoc.rulloa.accesiplus.data.tts.Voz
+import cl.duoc.rulloa.accesiplus.domain.ErroresFirebase
+import cl.duoc.rulloa.accesiplus.domain.FiltrosFrases
+import cl.duoc.rulloa.accesiplus.domain.Validaciones
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class PhraseUiState(
+    val error: String? = null,
+    val mensaje: String? = null,
+    /** Frase que se está mostrando en grande en pantalla. */
+    val enPantalla: String? = null
+)
+
+/** CRUD de frases para Escribir y Hablar, más la reproducción por voz. */
+@OptIn(ExperimentalCoroutinesApi::class)
+class PhraseViewModel(
+    private val auth: AuthRepository,
+    private val repo: PhraseRepository,
+    private val voz: Voz
+) : ViewModel() {
+
+    private val _ui = MutableStateFlow(PhraseUiState())
+    val ui: StateFlow<PhraseUiState> = _ui.asStateFlow()
+
+    val estadoVoz: StateFlow<EstadoTts> = voz.estado
+
+    val frases: StateFlow<List<Phrase>> = auth.estadoSesion()
+        .flatMapLatest { uid -> if (uid == null) flowOf(emptyList()) else repo.observarFrases(uid) }
+        .catch { e -> _ui.update { it.copy(error = ErroresFirebase.mensaje(e)) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun deCategoria(lista: List<Phrase>, categoria: String) = FiltrosFrases.porCategoria(lista, categoria)
+
+    fun crear(texto: String, categoria: String, favorita: Boolean = false) {
+        val uid = auth.uidActual ?: return
+        if (!Validaciones.isPhraseValid(texto)) {
+            _ui.update { it.copy(error = "La frase debe tener entre 1 y ${Validaciones.LARGO_MAX_FRASE} letras.") }
+            return
+        }
+        if (FiltrosFrases.existe(frases.value, texto, categoria)) {
+            _ui.update { it.copy(mensaje = "Esa frase ya está guardada.") }
+            return
+        }
+        lanzar("Frase guardada.") {
+            repo.crear(uid, Phrase(text = texto.trim(), category = categoria, favorite = favorita)).map { }
+        }
+    }
+
+    fun editar(frase: Phrase, nuevoTexto: String) {
+        val uid = auth.uidActual ?: return
+        if (!Validaciones.isPhraseValid(nuevoTexto)) {
+            _ui.update { it.copy(error = "La frase no puede quedar vacía.") }
+            return
+        }
+        lanzar("Frase actualizada.") { repo.actualizar(uid, frase.copy(text = nuevoTexto.trim())) }
+    }
+
+    fun eliminar(frase: Phrase) {
+        val uid = auth.uidActual ?: return
+        lanzar("Frase eliminada.") { repo.eliminar(uid, frase.id) }
+    }
+
+    fun alternarFavorita(frase: Phrase) {
+        val uid = auth.uidActual ?: return
+        val msg = if (frase.favorite) "Quitada de favoritas." else "Marcada como favorita."
+        lanzar(msg) { repo.actualizar(uid, frase.copy(favorite = !frase.favorite)) }
+    }
+
+    /** Lee en voz alta y muestra la frase en grande. Si es una frase guardada, suma un uso. */
+    fun hablar(texto: String, frase: Phrase? = null) {
+        _ui.update { it.copy(enPantalla = texto) }
+        if (!voz.hablar(texto)) {
+            _ui.update { it.copy(error = "La voz no está disponible. La frase se muestra en pantalla.") }
+        }
+        val uid = auth.uidActual
+        if (frase != null && frase.id.isNotBlank() && uid != null) {
+            viewModelScope.launch { repo.registrarUso(uid, frase.id) }
+        }
+    }
+
+    fun mostrar(texto: String) = _ui.update { it.copy(enPantalla = texto) }
+    fun ocultarPantalla() {
+        voz.detener()
+        _ui.update { it.copy(enPantalla = null) }
+    }
+
+    fun limpiarMensajes() = _ui.update { it.copy(error = null, mensaje = null) }
+
+    private fun lanzar(exito: String, accion: suspend () -> Result<Unit>) {
+        viewModelScope.launch {
+            val res = accion()
+            _ui.update {
+                it.copy(
+                    error = res.exceptionOrNull()?.let(ErroresFirebase::mensaje),
+                    mensaje = if (res.isSuccess) exito else null
+                )
+            }
+        }
+    }
+}

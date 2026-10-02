@@ -8,6 +8,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import cl.duoc.rulloa.accesiplus.AccesiPlusApp
 import cl.duoc.rulloa.accesiplus.di.AppContainer
 import cl.duoc.rulloa.accesiplus.ui.auth.AuthViewModel
+import cl.duoc.rulloa.accesiplus.ui.devices.DeviceViewModel
+import cl.duoc.rulloa.accesiplus.ui.phrases.PhraseViewModel
 import cl.duoc.rulloa.accesiplus.ui.profile.ProfileViewModel
 
 /** Obtiene el contenedor de dependencias desde la Application. */
@@ -27,6 +29,14 @@ object FabricaViewModels {
         initializer {
             val c = contenedor()
             ProfileViewModel(c.authRepository, c.userRepository)
+        }
+        initializer {
+            val c = contenedor()
+            PhraseViewModel(c.authRepository, c.phraseRepository, c.voz)
+        }
+        initializer {
+            val c = contenedor()
+            DeviceViewModel(c.authRepository, c.deviceRepository, c.ubicacion)
         }
     }
 }
