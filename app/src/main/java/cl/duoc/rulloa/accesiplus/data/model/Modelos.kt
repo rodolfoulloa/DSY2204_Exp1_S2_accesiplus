@@ -25,6 +25,9 @@ data class Phrase(
     companion object {
         /** Categoría de las frases escritas por el usuario (no rápidas). */
         const val CATEGORIA_PROPIA = "Propias"
+
+        /** Textos transcritos o tecleados en Escribir que el usuario decidió guardar. */
+        const val CATEGORIA_ESCRITA = "Escritas"
     }
 }
 

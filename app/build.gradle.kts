@@ -59,6 +59,10 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.kotlinx.coroutines.play.services)
 
+    // Ubicación (BuscarDispositivo) y diseño adaptativo (WindowSizeClass)
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.compose.material3.window.size)
+
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

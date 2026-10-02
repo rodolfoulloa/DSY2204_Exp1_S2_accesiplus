@@ -28,8 +28,11 @@ class AndroidConnectivityObserver(context: Context) : ConnectivityObserver {
         }
 
         val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) { trySend(tieneInternet()) }
-            override fun onLost(network: Network) { trySend(tieneInternet()) }
+            // onAvailable no garantiza internet: se espera a onCapabilitiesChanged (VALIDATED)
+            override fun onAvailable(network: Network) {}
+
+            // En onLost, activeNetwork todavía puede apuntar a la red perdida: se emite false directo
+            override fun onLost(network: Network) { trySend(false) }
             override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
                 trySend(
                     caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&

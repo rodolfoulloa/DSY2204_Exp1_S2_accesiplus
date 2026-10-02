@@ -3,6 +3,10 @@ package cl.duoc.rulloa.accesiplus.di
 import android.content.Context
 import cl.duoc.rulloa.accesiplus.data.connectivity.AndroidConnectivityObserver
 import cl.duoc.rulloa.accesiplus.data.connectivity.ConnectivityObserver
+import cl.duoc.rulloa.accesiplus.data.location.FusedUbicacionProvider
+import cl.duoc.rulloa.accesiplus.data.location.UbicacionProvider
+import cl.duoc.rulloa.accesiplus.data.tts.TtsService
+import cl.duoc.rulloa.accesiplus.data.tts.Voz
 import cl.duoc.rulloa.accesiplus.data.remote.RutasFirebase
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
 import cl.duoc.rulloa.accesiplus.data.repository.DeviceRepository
@@ -29,4 +33,6 @@ class AppContainer(context: Context) {
     val phraseRepository: PhraseRepository by lazy { FirebasePhraseRepository(rutas) }
     val deviceRepository: DeviceRepository by lazy { FirebaseDeviceRepository(rutas) }
     val connectivityObserver: ConnectivityObserver by lazy { AndroidConnectivityObserver(appContext) }
+    val voz: Voz by lazy { TtsService(appContext) }
+    val ubicacion: UbicacionProvider by lazy { FusedUbicacionProvider(appContext) }
 }
