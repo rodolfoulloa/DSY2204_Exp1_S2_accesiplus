@@ -1,5 +1,6 @@
 package cl.duoc.rulloa.accesiplus.ui.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -13,8 +14,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import cl.duoc.rulloa.accesiplus.ui.FabricaViewModels
 import cl.duoc.rulloa.accesiplus.ui.auth.AuthViewModel
@@ -22,7 +25,13 @@ import cl.duoc.rulloa.accesiplus.ui.auth.EstadoSesion
 import cl.duoc.rulloa.accesiplus.ui.auth.LoginScreen
 import cl.duoc.rulloa.accesiplus.ui.auth.RecoverPasswordScreen
 import cl.duoc.rulloa.accesiplus.ui.auth.RegisterScreen
-import cl.duoc.rulloa.accesiplus.ui.main.MainScreen
+import cl.duoc.rulloa.accesiplus.ui.devices.BuscarDispositivoScreen
+import cl.duoc.rulloa.accesiplus.ui.devices.DeviceViewModel
+import cl.duoc.rulloa.accesiplus.ui.escribir.EscribirScreen
+import cl.duoc.rulloa.accesiplus.ui.hablar.HablarScreen
+import cl.duoc.rulloa.accesiplus.ui.home.HomeMenuScreen
+import cl.duoc.rulloa.accesiplus.ui.home.TamanoVentana
+import cl.duoc.rulloa.accesiplus.ui.phrases.PhraseViewModel
 import cl.duoc.rulloa.accesiplus.ui.profile.ProfileScreen
 import cl.duoc.rulloa.accesiplus.ui.profile.ProfileViewModel
 
@@ -37,13 +46,28 @@ object Rutas {
     // Grafo protegido: requiere sesión activa
     const val GRAFO_APP = "app"
     const val HOME = "home"
+    const val ESCRIBIR = "escribir"
+    const val ARG_FRASE = "frase"
+    const val HABLAR = "hablar?$ARG_FRASE={$ARG_FRASE}"
+    const val BUSCAR = "buscar_dispositivo"
     const val PERFIL = "perfil"
+
+    fun hablar(frase: String? = null) =
+        if (frase == null) "hablar" else "hablar?$ARG_FRASE=${Uri.encode(frase)}"
 }
 
+/**
+ * @param fraseWidget frase recibida desde el widget: abre Hablar y la dice.
+ * @param contenidoBuscar contenido extra para BuscarDispositivo (Fragment de consejos).
+ */
 @Composable
 fun AccesiPlusNavHost(
     navController: NavHostController,
-    authViewModel: AuthViewModel = viewModel(factory = FabricaViewModels.Factory)
+    tamano: TamanoVentana,
+    authViewModel: AuthViewModel = viewModel(factory = FabricaViewModels.Factory),
+    fraseWidget: String? = null,
+    onFraseWidgetConsumida: () -> Unit = {},
+    contenidoBuscar: @Composable () -> Unit = {}
 ) {
     val sesion by authViewModel.sesion.collectAsStateWithLifecycle()
 
@@ -75,7 +99,38 @@ fun AccesiPlusNavHost(
         }
         navigation(route = Rutas.GRAFO_APP, startDestination = Rutas.HOME) {
             composable(Rutas.HOME) {
-                MainScreen(onPerfil = { navController.navigate(Rutas.PERFIL) })
+                val perfilVm: ProfileViewModel = viewModel(factory = FabricaViewModels.Factory)
+                HomeMenuScreen(
+                    perfilViewModel = perfilVm,
+                    tamano = tamano,
+                    onEscribir = { navController.navigate(Rutas.ESCRIBIR) },
+                    onHablar = { navController.navigate(Rutas.hablar()) },
+                    onBuscar = { navController.navigate(Rutas.BUSCAR) },
+                    onPerfil = { navController.navigate(Rutas.PERFIL) }
+                )
+            }
+            composable(Rutas.ESCRIBIR) {
+                val vm: PhraseViewModel = viewModel(factory = FabricaViewModels.Factory)
+                EscribirScreen(viewModel = vm, onVolver = { navController.popBackStack() })
+            }
+            composable(
+                Rutas.HABLAR,
+                arguments = listOf(navArgument(Rutas.ARG_FRASE) { type = NavType.StringType; nullable = true })
+            ) { entrada ->
+                val vm: PhraseViewModel = viewModel(factory = FabricaViewModels.Factory)
+                HablarScreen(
+                    viewModel = vm,
+                    onVolver = { navController.popBackStack() },
+                    fraseInicial = entrada.arguments?.getString(Rutas.ARG_FRASE)
+                )
+            }
+            composable(Rutas.BUSCAR) {
+                val vm: DeviceViewModel = viewModel(factory = FabricaViewModels.Factory)
+                BuscarDispositivoScreen(
+                    viewModel = vm,
+                    onVolver = { navController.popBackStack() },
+                    contenidoExtra = contenidoBuscar
+                )
             }
             composable(Rutas.PERFIL) {
                 val vm: ProfileViewModel = viewModel(factory = FabricaViewModels.Factory)
@@ -99,6 +154,14 @@ fun AccesiPlusNavHost(
                 popUpTo(navController.graph.id) { inclusive = true }
                 launchSingleTop = true
             }
+        }
+    }
+
+    // Frase desde el widget: solo con sesión activa (si no, queda esperando el login)
+    LaunchedEffect(fraseWidget, sesion) {
+        if (fraseWidget != null && sesion is EstadoSesion.Activa) {
+            navController.navigate(Rutas.hablar(fraseWidget)) { launchSingleTop = true }
+            onFraseWidgetConsumida()
         }
     }
 }
