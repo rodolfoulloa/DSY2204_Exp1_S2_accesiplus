@@ -1,8 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kover)
+}
+
+// local.properties no se versiona: guarda el SDK y las credenciales del usuario de prueba
+// que usan los tests instrumentados (accesiplus.pruebaCorreo / accesiplus.pruebaClave).
+val propiedadesLocales = Properties().apply {
+    val archivo = rootProject.file("local.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
 }
 
 android {
@@ -19,6 +29,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Se pasan como argumentos del runner (am instrument -e), no quedan dentro del APK
+        propiedadesLocales.getProperty("accesiplus.pruebaCorreo")?.let {
+            testInstrumentationRunnerArguments["pruebaCorreo"] = it
+        }
+        propiedadesLocales.getProperty("accesiplus.pruebaClave")?.let {
+            testInstrumentationRunnerArguments["pruebaClave"] = it
+        }
     }
 
     buildTypes {
@@ -34,6 +51,26 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    testOptions {
+        // Robolectric necesita los recursos de Android (layouts, strings) en las pruebas JVM
+        unitTests.isIncludeAndroidResources = true
+    }
+}
+
+// Cobertura con Kover: se excluye código generado que no tiene lógica propia
+kover {
+    reports {
+        filters {
+            excludes {
+                classes(
+                    "*ComposableSingletons*",
+                    "*.BuildConfig",
+                    "*_Impl", "*_Impl\$*",
+                    "*.ui.theme.*"
+                )
+            }
+        }
     }
 }
 
@@ -72,11 +109,22 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.fragment.compose)
 
+    // Pruebas JVM: JUnit, Mockito (mockito-kotlin), corrutinas de prueba y Robolectric
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.junit)
+
+    // Pruebas instrumentadas en el emulador: Compose UI test + Espresso
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

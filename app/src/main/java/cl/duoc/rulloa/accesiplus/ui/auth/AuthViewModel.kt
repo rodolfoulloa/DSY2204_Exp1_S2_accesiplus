@@ -32,7 +32,9 @@ data class AuthUiState(
 class AuthViewModel(
     private val auth: AuthRepository,
     private val usuarios: UserRepository,
-    private val reloj: () -> Long = System::currentTimeMillis
+    private val reloj: () -> Long = System::currentTimeMillis,
+    // Inyectable: android.util.Patterns no existe en pruebas JVM puras (se prueba aparte con Robolectric)
+    private val validarCorreo: (String) -> Boolean = Validaciones::isEmailValid
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(AuthUiState())
@@ -43,7 +45,7 @@ class AuthViewModel(
         .map { uid -> if (uid == null) EstadoSesion.SinSesion else EstadoSesion.Activa(uid) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, EstadoSesion.Cargando)
 
-    fun isEmailValid(correo: String) = Validaciones.isEmailValid(correo)
+    fun isEmailValid(correo: String) = validarCorreo(correo)
     fun isPasswordValid(clave: String) = Validaciones.isPasswordValid(clave)
 
     fun login(correo: String, clave: String) {
