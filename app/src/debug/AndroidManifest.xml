@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo en debug: exporta el ContentProvider para poder consultarlo con
+     "adb shell content query" durante el desarrollo. En release sigue sin exportarse. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+        <provider
+            android:name=".provider.PhrasesProvider"
+            android:authorities="cl.duoc.rulloa.accesiplus.frases"
+            android:exported="true"
+            tools:replace="android:exported" />
+    </application>
+</manifest>

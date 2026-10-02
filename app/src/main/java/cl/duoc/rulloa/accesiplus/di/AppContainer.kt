@@ -3,6 +3,10 @@ package cl.duoc.rulloa.accesiplus.di
 import android.content.Context
 import cl.duoc.rulloa.accesiplus.data.connectivity.AndroidConnectivityObserver
 import cl.duoc.rulloa.accesiplus.data.connectivity.ConnectivityObserver
+import cl.duoc.rulloa.accesiplus.data.local.BaseLocal
+import cl.duoc.rulloa.accesiplus.data.local.PhraseSync
+import cl.duoc.rulloa.accesiplus.provider.PhrasesProvider
+import cl.duoc.rulloa.accesiplus.widget.FraseRapidaWidget
 import cl.duoc.rulloa.accesiplus.data.location.FusedUbicacionProvider
 import cl.duoc.rulloa.accesiplus.data.location.UbicacionProvider
 import cl.duoc.rulloa.accesiplus.data.tts.TtsService
@@ -35,4 +39,13 @@ class AppContainer(context: Context) {
     val connectivityObserver: ConnectivityObserver by lazy { AndroidConnectivityObserver(appContext) }
     val voz: Voz by lazy { TtsService(appContext) }
     val ubicacion: UbicacionProvider by lazy { FusedUbicacionProvider(appContext) }
+
+    // Caché local de frases (Room) que alimenta el ContentProvider y el widget
+    val baseLocal: BaseLocal by lazy { BaseLocal.obtener(appContext) }
+    val phraseSync: PhraseSync by lazy {
+        PhraseSync(authRepository, phraseRepository, baseLocal.frases()) {
+            appContext.contentResolver.notifyChange(PhrasesProvider.URI_FRASES, null)
+            FraseRapidaWidget.actualizarTodos(appContext)
+        }
+    }
 }

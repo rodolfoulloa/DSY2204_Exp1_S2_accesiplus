@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -62,6 +63,14 @@ dependencies {
     // Ubicación (BuscarDispositivo) y diseño adaptativo (WindowSizeClass)
     implementation(libs.play.services.location)
     implementation(libs.androidx.compose.material3.window.size)
+
+    // Componentes Android: Room (caché + ContentProvider), Palette y Fragment en Compose
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.palette.ktx)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.fragment.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
