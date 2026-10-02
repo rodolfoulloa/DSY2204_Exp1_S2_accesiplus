@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "147620891282",
+    "project_id": "accesiplus",
+    "storage_bucket": "accesiplus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:147620891282:android:df5fbfbc1ecb8f4d8db44b",
+        "android_client_info": {
+          "package_name": "cl.duoc.rulloa.accesiplus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2uqxto-OcWS2xsqvPUXkcneppYjSZ4p4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
