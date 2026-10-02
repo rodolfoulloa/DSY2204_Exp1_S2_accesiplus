@@ -1,8 +1,8 @@
-package com.example.myapplication.ui.auth
+package cl.duoc.rulloa.accesiplus.ui.auth
 
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
-import com.example.myapplication.data.MockData
+import cl.duoc.rulloa.accesiplus.data.MockData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -40,7 +40,7 @@ class AuthViewModel : ViewModel() {
                 return false
             }
             val newId = (MockData.registeredUsers.maxOfOrNull { it.id } ?: 0) + 1
-            val newUser = com.example.myapplication.data.User(newId, email, password, name, role, gender)
+            val newUser = cl.duoc.rulloa.accesiplus.data.User(newId, email, password, name, role, gender)
             MockData.registeredUsers.add(newUser)
             _authSuccessMessage.value = "¡Cuenta creada con éxito! Ya puedes iniciar sesión."
             true

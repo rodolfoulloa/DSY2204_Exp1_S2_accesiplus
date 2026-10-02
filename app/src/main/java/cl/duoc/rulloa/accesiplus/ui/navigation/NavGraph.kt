@@ -1,15 +1,15 @@
-package com.example.myapplication.ui.navigation
+package cl.duoc.rulloa.accesiplus.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.myapplication.ui.auth.AuthViewModel
-import com.example.myapplication.ui.auth.LoginScreen
-import com.example.myapplication.ui.auth.RegisterScreen
-import com.example.myapplication.ui.auth.RecoverPasswordScreen
-import com.example.myapplication.ui.main.MainScreen
+import cl.duoc.rulloa.accesiplus.ui.auth.AuthViewModel
+import cl.duoc.rulloa.accesiplus.ui.auth.LoginScreen
+import cl.duoc.rulloa.accesiplus.ui.auth.RegisterScreen
+import cl.duoc.rulloa.accesiplus.ui.auth.RecoverPasswordScreen
+import cl.duoc.rulloa.accesiplus.ui.main.MainScreen
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")

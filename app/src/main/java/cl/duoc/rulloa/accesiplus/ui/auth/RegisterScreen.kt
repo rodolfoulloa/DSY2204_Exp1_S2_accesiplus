@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.auth
+package cl.duoc.rulloa.accesiplus.ui.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

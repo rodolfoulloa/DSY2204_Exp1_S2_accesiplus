@@ -1,4 +1,4 @@
-package com.example.myapplication
+package cl.duoc.rulloa.accesiplus
 
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -13,8 +13,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.example.myapplication.ui.navigation.SetupNavGraph
-import com.example.myapplication.ui.theme.MyApplicationTheme
+import cl.duoc.rulloa.accesiplus.ui.navigation.SetupNavGraph
+import cl.duoc.rulloa.accesiplus.ui.theme.AccesiPlusTheme
 import java.util.Locale
 
 val LocalTextToSpeech = staticCompositionLocalOf<TextToSpeech?> { null }
@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         tts = TextToSpeech(this, this)
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
+            AccesiPlusTheme {
                 val navController = rememberNavController()
                 CompositionLocalProvider(LocalTextToSpeech provides tts) {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->

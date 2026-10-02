@@ -1,4 +1,4 @@
-package com.example.myapplication.data
+package cl.duoc.rulloa.accesiplus.data
 
 data class User(
     val id: Int,

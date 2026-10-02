@@ -1,4 +1,4 @@
-package com.example.myapplication
+package cl.duoc.rulloa.accesiplus
 
 import org.junit.Test
 

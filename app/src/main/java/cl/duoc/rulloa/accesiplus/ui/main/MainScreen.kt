@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.main
+package cl.duoc.rulloa.accesiplus.ui.main
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -21,9 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.myapplication.data.MockData
-import com.example.myapplication.data.CommunicationCategory
-import com.example.myapplication.data.AccessInfo
+import cl.duoc.rulloa.accesiplus.data.MockData
+import cl.duoc.rulloa.accesiplus.data.CommunicationCategory
+import cl.duoc.rulloa.accesiplus.data.AccessInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,7 +124,7 @@ fun MainScreen(onLogout: () -> Unit) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     var textToSpeak by remember { mutableStateOf("") }
                     var spokenTextDisplay by remember { mutableStateOf("") }
-                    val tts = com.example.myapplication.LocalTextToSpeech.current
+                    val tts = cl.duoc.rulloa.accesiplus.LocalTextToSpeech.current
 
                     OutlinedTextField(
                         value = textToSpeak,

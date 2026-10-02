@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.myapplication"
+    namespace = "cl.duoc.rulloa.accesiplus"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.myapplication"
+        applicationId = "cl.duoc.rulloa.accesiplus"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
