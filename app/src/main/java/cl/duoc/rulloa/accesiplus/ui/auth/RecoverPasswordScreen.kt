@@ -1,95 +1,74 @@
 package cl.duoc.rulloa.accesiplus.ui.auth
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.padding
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cl.duoc.rulloa.accesiplus.ui.components.BotonGrande
+import cl.duoc.rulloa.accesiplus.ui.components.PantallaBase
+import cl.duoc.rulloa.accesiplus.ui.components.TextoError
 
 @Composable
 fun RecoverPasswordScreen(
     viewModel: AuthViewModel,
-    onEmailSent: () -> Unit,
     onBackToLogin: () -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    val isEmailValid = viewModel.isEmailValid(email)
-    val loginError by viewModel.loginError.collectAsState()
-    
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    var correo by rememberSaveable { mutableStateOf("") }
+    val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val correoMal = correo.isNotEmpty() && !viewModel.isEmailValid(correo)
+    val volver = { viewModel.limpiarMensajes(); onBackToLogin() }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Recuperar Acceso",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Ingresa tu correo institucional o personal para restablecer tu clave.",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Correo electrónico") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = (email.isNotEmpty() && !isEmailValid) || loginError != null,
-                supportingText = {
-                    if (email.isNotEmpty() && !isEmailValid) {
-                        Text("Formato de correo inválido")
-                    } else if (loginError != null) {
-                        Text(loginError ?: "", color = MaterialTheme.colorScheme.error)
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = {
-                    if (viewModel.recoverPassword(email)) {
-                        onEmailSent()
-                    } else {
-                        // El error se actualizará en loginError
-                    }
-                },
-                enabled = isEmailValid,
-                modifier = Modifier.fillMaxWidth()
+    PantallaBase(titulo = "Recuperar contraseña", onVolver = volver) {
+        Text(
+            "Escribe el correo de tu cuenta. Te enviaremos un enlace para crear una nueva contraseña.",
+            style = MaterialTheme.typography.bodyLarge
+        )
+        OutlinedTextField(
+            value = correo,
+            onValueChange = { correo = it; viewModel.limpiarMensajes() },
+            label = { Text("Correo electrónico") },
+            singleLine = true,
+            isError = correoMal,
+            supportingText = { if (correoMal) Text("Revisa el formato: nombre@correo.cl") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            textStyle = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.fillMaxWidth().testTag("campo_correo_recuperar")
+        )
+        TextoError(ui.error)
+        ui.mensaje?.let {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }
             ) {
-                Text("Enviar Instrucciones")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(onClick = {
-                viewModel.clearMessages()
-                onBackToLogin()
-            }) {
-                Text("Volver al Login")
+                Text(it, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(16.dp))
             }
         }
+        BotonGrande(
+            texto = "Enviar enlace",
+            icono = Icons.Filled.Email,
+            onClick = { viewModel.recuperar(correo) },
+            habilitado = viewModel.isEmailValid(correo),
+            cargando = ui.cargando
+        )
+        BotonGrande(texto = "Volver a iniciar sesión", onClick = volver, secundario = true)
     }
 }
-

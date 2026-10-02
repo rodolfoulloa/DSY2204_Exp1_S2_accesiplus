@@ -1,68 +1,104 @@
 package cl.duoc.rulloa.accesiplus.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navigation
+import cl.duoc.rulloa.accesiplus.ui.FabricaViewModels
 import cl.duoc.rulloa.accesiplus.ui.auth.AuthViewModel
+import cl.duoc.rulloa.accesiplus.ui.auth.EstadoSesion
 import cl.duoc.rulloa.accesiplus.ui.auth.LoginScreen
-import cl.duoc.rulloa.accesiplus.ui.auth.RegisterScreen
 import cl.duoc.rulloa.accesiplus.ui.auth.RecoverPasswordScreen
+import cl.duoc.rulloa.accesiplus.ui.auth.RegisterScreen
 import cl.duoc.rulloa.accesiplus.ui.main.MainScreen
+import cl.duoc.rulloa.accesiplus.ui.profile.ProfileScreen
+import cl.duoc.rulloa.accesiplus.ui.profile.ProfileViewModel
 
-sealed class Screen(val route: String) {
-    object Login : Screen("login")
-    object Register : Screen("register")
-    object RecoverPassword : Screen("recover_password")
-    object Main : Screen("main")
+/** Rutas como constantes (mitigación del riesgo "navegación mal estructurada"). */
+object Rutas {
+    // Grafo público: solo se puede ver sin sesión
+    const val GRAFO_AUTH = "auth"
+    const val LOGIN = "login"
+    const val REGISTRO = "registro"
+    const val RECUPERAR = "recuperar"
+
+    // Grafo protegido: requiere sesión activa
+    const val GRAFO_APP = "app"
+    const val HOME = "home"
+    const val PERFIL = "perfil"
 }
 
 @Composable
-fun SetupNavGraph(
+fun AccesiPlusNavHost(
     navController: NavHostController,
-    startDestination: String = Screen.Login.route
+    authViewModel: AuthViewModel = viewModel(factory = FabricaViewModels.Factory)
 ) {
-    val authViewModel: AuthViewModel = viewModel()
+    val sesion by authViewModel.sesion.collectAsStateWithLifecycle()
+
+    if (sesion == EstadoSesion.Cargando) {
+        Box(Modifier.fillMaxSize().testTag("cargando_sesion"), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
 
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = if (sesion is EstadoSesion.Activa) Rutas.GRAFO_APP else Rutas.GRAFO_AUTH
     ) {
-        composable(route = Screen.Login.route) {
-            LoginScreen(
-                viewModel = authViewModel,
-                onLoginSuccess = { 
-                    navController.navigate(Screen.Main.route) {
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                },
-                onRegisterClick = { navController.navigate(Screen.Register.route) },
-                onRecoverPasswordClick = { navController.navigate(Screen.RecoverPassword.route) }
-            )
+        navigation(route = Rutas.GRAFO_AUTH, startDestination = Rutas.LOGIN) {
+            composable(Rutas.LOGIN) {
+                LoginScreen(
+                    viewModel = authViewModel,
+                    onRegisterClick = { navController.navigate(Rutas.REGISTRO) },
+                    onRecoverPasswordClick = { navController.navigate(Rutas.RECUPERAR) }
+                )
+            }
+            composable(Rutas.REGISTRO) {
+                RegisterScreen(viewModel = authViewModel, onBackToLogin = { navController.popBackStack() })
+            }
+            composable(Rutas.RECUPERAR) {
+                RecoverPasswordScreen(viewModel = authViewModel, onBackToLogin = { navController.popBackStack() })
+            }
         }
-        composable(route = Screen.Register.route) {
-            RegisterScreen(
-                viewModel = authViewModel,
-                onRegisterSuccess = { navController.navigate(Screen.Login.route) },
-                onBackToLogin = { navController.popBackStack() }
-            )
+        navigation(route = Rutas.GRAFO_APP, startDestination = Rutas.HOME) {
+            composable(Rutas.HOME) {
+                MainScreen(onPerfil = { navController.navigate(Rutas.PERFIL) })
+            }
+            composable(Rutas.PERFIL) {
+                val vm: ProfileViewModel = viewModel(factory = FabricaViewModels.Factory)
+                ProfileScreen(viewModel = vm, onVolver = { navController.popBackStack() })
+            }
         }
-        composable(route = Screen.RecoverPassword.route) {
-            RecoverPasswordScreen(
-                viewModel = authViewModel,
-                onEmailSent = { navController.navigate(Screen.Login.route) },
-                onBackToLogin = { navController.popBackStack() }
-            )
+    }
+
+    // Guardia de sesión: si la sesión cambia, se reemplaza toda la pila de navegación.
+    // Así no se puede volver con "Atrás" a una pantalla protegida después de cerrar sesión.
+    LaunchedEffect(sesion) {
+        val actual = navController.currentBackStackEntry?.destination ?: return@LaunchedEffect
+        val enAuth = actual.hierarchy.any { it.route == Rutas.GRAFO_AUTH }
+        val destino = when {
+            sesion is EstadoSesion.Activa && enAuth -> Rutas.GRAFO_APP
+            sesion is EstadoSesion.SinSesion && !enAuth -> Rutas.GRAFO_AUTH
+            else -> null
         }
-        composable(route = Screen.Main.route) {
-            MainScreen(
-                onLogout = { 
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Main.route) { inclusive = true }
-                    }
-                }
-            )
+        if (destino != null) {
+            navController.navigate(destino) {
+                popUpTo(navController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
         }
     }
 }

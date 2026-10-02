@@ -27,7 +27,7 @@ import cl.duoc.rulloa.accesiplus.data.AccessInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onLogout: () -> Unit) {
+fun MainScreen(onPerfil: () -> Unit) {
     var showDetailDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -35,8 +35,8 @@ fun MainScreen(onLogout: () -> Unit) {
             TopAppBar(
                 title = { Text("Panel de Accesibilidad") },
                 actions = {
-                    TextButton(onClick = onLogout) {
-                        Text("Cerrar Sesión", color = MaterialTheme.colorScheme.error)
+                    TextButton(onClick = onPerfil) {
+                        Text("Mi perfil")
                     }
                 }
             )
