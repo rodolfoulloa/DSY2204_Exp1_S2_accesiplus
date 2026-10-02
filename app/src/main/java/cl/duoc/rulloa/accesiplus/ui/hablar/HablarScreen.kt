@@ -46,6 +46,7 @@ import cl.duoc.rulloa.accesiplus.data.model.Phrase
 import cl.duoc.rulloa.accesiplus.data.tts.EstadoTts
 import cl.duoc.rulloa.accesiplus.data.tts.TtsService
 import cl.duoc.rulloa.accesiplus.domain.FiltrosFrases
+import cl.duoc.rulloa.accesiplus.domain.OrdenFrases
 import cl.duoc.rulloa.accesiplus.ui.components.ALTO_TACTIL
 import cl.duoc.rulloa.accesiplus.ui.components.BotonGrande
 import cl.duoc.rulloa.accesiplus.ui.components.MostrarMensaje
@@ -178,7 +179,8 @@ fun HablarScreen(
             onClick = { creando = true }, modifier = Modifier.testTag("boton_nueva_frase")
         )
         if (propias.isEmpty()) Text("Crea frases propias o marca frases rápidas con la estrella.", style = MaterialTheme.typography.bodyLarge)
-        propias.sortedWith(compareByDescending<Phrase> { it.favorite }.thenByDescending { it.createdAt }).forEach { frase ->
+        // Las más usadas primero (función desarrollada con TDD)
+        OrdenFrases.ordenarPorUso(propias).forEach { frase ->
             Column {
                 Text(frase.category, style = MaterialTheme.typography.labelMedium)
                 TarjetaFrase(

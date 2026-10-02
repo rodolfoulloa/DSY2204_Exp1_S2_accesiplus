@@ -58,6 +58,14 @@ android {
     }
 }
 
+// Muestra cada prueba (PASSED / FAILED) en la consola
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events("passed", "failed", "skipped")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.SHORT
+    }
+}
+
 // Cobertura con Kover: se excluye código generado que no tiene lógica propia
 kover {
     reports {
