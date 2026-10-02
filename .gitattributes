@@ -1,0 +1,10 @@
+# Normalización de fines de línea: el repositorio guarda LF y cada SO convierte al hacer checkout
+* text=auto
+*.bat eol=crlf
+gradlew eol=lf
+# Binarios
+*.png binary
+*.jpg binary
+*.jar binary
+*.apk binary
+*.pdf binary
