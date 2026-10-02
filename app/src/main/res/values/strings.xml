@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">AccesiPlus</string>
+
+    <!-- Widget Frase rápida -->
+    <string name="widget_nombre">Frase rápida</string>
+    <string name="widget_descripcion">Tu última frase favorita, lista para decirla en voz alta.</string>
+    <string name="widget_titulo">Frase rápida</string>
+    <string name="widget_sin_favorita">Marca una frase con la estrella en Hablar para verla aquí.</string>
+    <string name="widget_decir">Decir</string>
+
+    <!-- Fragment de consejos (BuscarDispositivo) -->
+    <string name="consejos_titulo">Consejos para no perder tus dispositivos</string>
+    <string name="consejos_boton_siguiente">Otro consejo</string>
 </resources>

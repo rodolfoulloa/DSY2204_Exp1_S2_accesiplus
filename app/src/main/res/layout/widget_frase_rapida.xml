@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ViewGroup clásico (LinearLayout) para el widget: RemoteViews no admite Compose -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_raiz"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/fondo_widget"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/widget_titulo"
+        android:textColor="@color/widget_texto_secundario"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_texto"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="3"
+        android:text="@string/widget_sin_favorita"
+        android:textColor="@color/widget_texto"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/widget_boton_decir"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
+        android:backgroundTint="@color/widget_boton"
+        android:contentDescription="@string/widget_decir"
+        android:text="@string/widget_decir"
+        android:textColor="@color/widget_texto_boton"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+</LinearLayout>

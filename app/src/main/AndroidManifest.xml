@@ -46,6 +46,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Frases guardadas (caché Room). No se exporta: solo lo usa el widget de la app. -->
+        <provider
+            android:name=".provider.PhrasesProvider"
+            android:authorities="cl.duoc.rulloa.accesiplus.frases"
+            android:exported="false" />
+
+        <!-- Widget "Frase rápida" para la pantalla de inicio -->
+        <receiver
+            android:name=".widget.FraseRapidaWidget"
+            android:exported="false"
+            android:label="@string/widget_nombre">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_frase_rapida_info" />
+        </receiver>
     </application>
 
 </manifest>

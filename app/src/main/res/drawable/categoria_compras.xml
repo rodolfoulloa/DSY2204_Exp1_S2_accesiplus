@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Imagen de la categoría compras: Palette extrae de aquí el color de sus chips y tarjetas -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:fillColor="#FFCE93D8" android:pathData="M0,0h48v48h-48z" />
+    <path android:fillColor="#FF6A1B9A" android:pathData="M24,6a18,18 0,1 1,0 36a18,18 0,1 1,0 -36z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M20,16h8v8h-8z M16,28h16v4h-16z" />
+</vector>

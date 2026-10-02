@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ViewGroup clásico (LinearLayout) dentro de un Fragment, integrado en Compose con AndroidFragment -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/consejo_fondo"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/consejo_titulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityHeading="true"
+        android:text="@string/consejos_titulo"
+        android:textColor="@color/consejo_texto"
+        android:textSize="21sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/consejo_texto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:accessibilityLiveRegion="polite"
+        android:textColor="@color/consejo_texto"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/consejo_contador"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/consejo_texto"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/consejo_siguiente"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:minHeight="56dp"
+        android:text="@string/consejos_boton_siguiente"
+        android:textSize="18sp" />
+</LinearLayout>

@@ -7,6 +7,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import cl.duoc.rulloa.accesiplus.data.model.FrasesRapidas
+import cl.duoc.rulloa.accesiplus.ui.hablar.ColoresCategoria
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -35,6 +40,9 @@ import cl.duoc.rulloa.accesiplus.ui.phrases.PhraseViewModel
 import cl.duoc.rulloa.accesiplus.ui.profile.ProfileScreen
 import cl.duoc.rulloa.accesiplus.ui.profile.ProfileViewModel
 
+/** Pedido que llega desde el widget \"Frase rápida\". */
+data class SolicitudWidget(val frase: String?)
+
 /** Rutas como constantes (mitigación del riesgo "navegación mal estructurada"). */
 object Rutas {
     // Grafo público: solo se puede ver sin sesión
@@ -57,7 +65,7 @@ object Rutas {
 }
 
 /**
- * @param fraseWidget frase recibida desde el widget: abre Hablar y la dice.
+ * @param solicitudWidget toque en el widget: abre Hablar y, si trae frase, la dice.
  * @param contenidoBuscar contenido extra para BuscarDispositivo (Fragment de consejos).
  */
 @Composable
@@ -65,8 +73,8 @@ fun AccesiPlusNavHost(
     navController: NavHostController,
     tamano: TamanoVentana,
     authViewModel: AuthViewModel = viewModel(factory = FabricaViewModels.Factory),
-    fraseWidget: String? = null,
-    onFraseWidgetConsumida: () -> Unit = {},
+    solicitudWidget: SolicitudWidget? = null,
+    onSolicitudWidgetAtendida: () -> Unit = {},
     contenidoBuscar: @Composable () -> Unit = {}
 ) {
     val sesion by authViewModel.sesion.collectAsStateWithLifecycle()
@@ -118,10 +126,16 @@ fun AccesiPlusNavHost(
                 arguments = listOf(navArgument(Rutas.ARG_FRASE) { type = NavType.StringType; nullable = true })
             ) { entrada ->
                 val vm: PhraseViewModel = viewModel(factory = FabricaViewModels.Factory)
+                val context = LocalContext.current
+                // Palette se calcula una vez por pantalla, fuera del hilo principal
+                val colores by produceState(emptyMap<String, Color>()) {
+                    value = ColoresCategoria.calcular(context, FrasesRapidas.nombres)
+                }
                 HablarScreen(
                     viewModel = vm,
                     onVolver = { navController.popBackStack() },
-                    fraseInicial = entrada.arguments?.getString(Rutas.ARG_FRASE)
+                    fraseInicial = entrada.arguments?.getString(Rutas.ARG_FRASE),
+                    colorCategoria = { colores[it] }
                 )
             }
             composable(Rutas.BUSCAR) {
@@ -157,11 +171,12 @@ fun AccesiPlusNavHost(
         }
     }
 
-    // Frase desde el widget: solo con sesión activa (si no, queda esperando el login)
-    LaunchedEffect(fraseWidget, sesion) {
-        if (fraseWidget != null && sesion is EstadoSesion.Activa) {
-            navController.navigate(Rutas.hablar(fraseWidget)) { launchSingleTop = true }
-            onFraseWidgetConsumida()
+    // Toque en el widget: solo con sesión activa (si no, queda esperando el login)
+    LaunchedEffect(solicitudWidget, sesion) {
+        if (solicitudWidget != null && sesion is EstadoSesion.Activa) {
+            // Nueva entrada de Hablar sobre el Home (si ya estaba abierta, se reemplaza con la nueva frase)
+            navController.navigate(Rutas.hablar(solicitudWidget.frase)) { popUpTo(Rutas.HOME) }
+            onSolicitudWidgetAtendida()
         }
     }
 }
