@@ -1,12 +1,8 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
+# Reglas de R8 propias de AccesiPlus.
+# AGP combina todos los archivos de src/main/keepRules y se los pasa a R8.
 #
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
+# Los modelos se convierten a Map a mano (data/model/Mapeo.kt), así que Firebase no necesita
+# reflexión sobre ellos. Firebase, Room y Fragment traen sus propias reglas.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# AndroidFragment instancia el Fragment por nombre de clase (FragmentFactory): conservar su constructor
+-keep class cl.duoc.rulloa.accesiplus.ui.devices.ConsejosFragment { public <init>(); }

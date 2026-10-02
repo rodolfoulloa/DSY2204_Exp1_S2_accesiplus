@@ -15,6 +15,12 @@ val propiedadesLocales = Properties().apply {
     if (archivo.exists()) archivo.inputStream().use { load(it) }
 }
 
+// keystore.properties (no versionado) apunta al keystore guardado fuera del repositorio
+val propiedadesFirma = Properties().apply {
+    val archivo = rootProject.file("keystore.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+
 android {
     namespace = "cl.duoc.rulloa.accesiplus"
     compileSdk {
@@ -25,8 +31,8 @@ android {
         applicationId = "cl.duoc.rulloa.accesiplus"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Se pasan como argumentos del runner (am instrument -e), no quedan dentro del APK
@@ -38,10 +44,24 @@ android {
         }
     }
 
+    signingConfigs {
+        // Solo se crea si existe keystore.properties; sin él, el APK release queda sin firmar
+        if (propiedadesFirma.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = rootProject.file(propiedadesFirma.getProperty("storeFile"))
+                storePassword = propiedadesFirma.getProperty("storePassword")
+                keyAlias = propiedadesFirma.getProperty("keyAlias")
+                keyPassword = propiedadesFirma.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
+            // R8: reduce y optimiza el código (Compose sin optimizar corre bastante más lento)
             optimization {
-                enable = false
+                enable = true
             }
         }
     }

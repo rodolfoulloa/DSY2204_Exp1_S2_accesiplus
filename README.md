@@ -65,11 +65,16 @@ La base se creó en **modo de prueba** (abierta por 30 días). Antes de entregar
 
 ## Firma
 
-`keystore.properties` (ignorado por git) apunta a un keystore fuera del repositorio:
+`keystore.properties` (ignorado por git, en la raíz del proyecto) apunta a un keystore guardado
+**fuera** del repositorio, en `../keystore-accesiplus/accesiplus.jks` (PKCS12, RSA 2048, alias
+`accesiplus`, válido 10 000 días). Ruta relativa a la raíz del proyecto:
 
 ```
-storeFile=../../keystore-accesiplus/accesiplus.jks
+storeFile=../keystore-accesiplus/accesiplus.jks
 storePassword=…
 keyAlias=accesiplus
 keyPassword=…
 ```
+
+Si `keystore.properties` no existe, `assembleRelease` genera un APK sin firmar.
+Versión publicada: `versionCode 2`, `versionName "1.0.0"`.
