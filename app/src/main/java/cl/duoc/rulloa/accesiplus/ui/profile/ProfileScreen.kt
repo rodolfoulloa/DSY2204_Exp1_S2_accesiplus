@@ -1,18 +1,25 @@
 package cl.duoc.rulloa.accesiplus.ui.profile
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,11 +29,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cl.duoc.rulloa.accesiplus.ui.components.ALTO_TACTIL
 import cl.duoc.rulloa.accesiplus.ui.components.BotonGrande
 import cl.duoc.rulloa.accesiplus.ui.components.MostrarMensaje
 import cl.duoc.rulloa.accesiplus.ui.components.PantallaBase
@@ -36,6 +46,7 @@ import cl.duoc.rulloa.accesiplus.ui.components.TextoError
 fun ProfileScreen(viewModel: ProfileViewModel, onVolver: () -> Unit) {
     val perfil by viewModel.perfil.collectAsStateWithLifecycle()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val vibracion by viewModel.vibracion.collectAsStateWithLifecycle()
     var nombre by rememberSaveable { mutableStateOf("") }
     var pedirClave by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
@@ -71,6 +82,29 @@ fun ProfileScreen(viewModel: ProfileViewModel, onVolver: () -> Unit) {
             habilitado = nombre.isNotBlank() && nombre != perfil?.name,
             cargando = ui.cargando
         )
+        // Toda la fila es el control (toggleable): objetivo táctil grande y TalkBack lee
+        // "Vibración, activado/desactivado, interruptor" en un solo elemento
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = ALTO_TACTIL)
+                    .toggleable(value = vibracion, role = Role.Switch, onValueChange = viewModel::cambiarVibracion)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .testTag("interruptor_vibracion"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Vibration, contentDescription = null, modifier = Modifier.size(32.dp))
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("Vibración", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "El teléfono vibra al terminar, al guardar y si hay un error.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Switch(checked = vibracion, onCheckedChange = null)
+            }
+        }
         BotonGrande(
             texto = "Cerrar sesión",
             icono = Icons.AutoMirrored.Filled.Logout,

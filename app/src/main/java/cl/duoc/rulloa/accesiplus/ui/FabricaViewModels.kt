@@ -30,7 +30,7 @@ object FabricaViewModels {
         }
         initializer {
             val c = contenedor()
-            ProfileViewModel(c.authRepository, c.userRepository)
+            ProfileViewModel(c.authRepository, c.userRepository, c.preferencias, c.haptica)
         }
         initializer {
             val c = contenedor()

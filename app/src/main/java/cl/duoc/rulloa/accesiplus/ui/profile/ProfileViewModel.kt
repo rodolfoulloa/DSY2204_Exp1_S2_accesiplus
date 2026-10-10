@@ -2,6 +2,9 @@ package cl.duoc.rulloa.accesiplus.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cl.duoc.rulloa.accesiplus.data.haptica.EventoHaptico
+import cl.duoc.rulloa.accesiplus.data.haptica.Haptica
+import cl.duoc.rulloa.accesiplus.data.local.Preferencias
 import cl.duoc.rulloa.accesiplus.data.model.UserProfile
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
 import cl.duoc.rulloa.accesiplus.data.repository.UserRepository
@@ -37,11 +40,24 @@ sealed interface EstadoSaludo {
 class ProfileViewModel(
     private val auth: AuthRepository,
     private val usuarios: UserRepository,
+    private val prefs: Preferencias,
+    private val haptica: Haptica,
     private val esperaSaludoMs: Long = 4_000L
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(ProfileUiState())
     val ui: StateFlow<ProfileUiState> = _ui.asStateFlow()
+
+    /** Interruptor "Vibración": se lee de SharedPreferences al abrir el perfil. */
+    private val _vibracion = MutableStateFlow(prefs.vibracionActiva())
+    val vibracion: StateFlow<Boolean> = _vibracion.asStateFlow()
+
+    fun cambiarVibracion(activa: Boolean) {
+        prefs.cambiarVibracion(activa)
+        _vibracion.value = activa
+        // Al activarla, un toque corto de muestra confirma que funciona
+        if (activa) haptica.avisar(EventoHaptico.VIBRACION_ACTIVADA)
+    }
 
     private val perfilRemoto = auth.estadoSesion()
         .flatMapLatest { uid -> if (uid == null) emptyFlow() else usuarios.observarPerfil(uid) }

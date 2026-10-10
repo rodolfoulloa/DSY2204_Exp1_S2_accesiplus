@@ -1,6 +1,7 @@
 package cl.duoc.rulloa.accesiplus.ui.profile
 
 import cl.duoc.rulloa.accesiplus.ReglaDispatcherPrincipal
+import cl.duoc.rulloa.accesiplus.data.haptica.Haptica
 import cl.duoc.rulloa.accesiplus.data.model.UserProfile
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
 import cl.duoc.rulloa.accesiplus.data.repository.UserRepository
@@ -30,7 +31,7 @@ class ProfileViewModelSaludoTest {
             on { correoActual } doReturn "rodolfo@duoc.cl"
         }
         val usuarios: UserRepository = mock { on { observarPerfil("u1") } doReturn perfil }
-        return ProfileViewModel(auth, usuarios, esperaSaludoMs = 4_000)
+        return ProfileViewModel(auth, usuarios, mock(), Haptica.NINGUNA, esperaSaludoMs = 4_000)
     }
 
     private fun TestScope.observar(vm: ProfileViewModel) {
