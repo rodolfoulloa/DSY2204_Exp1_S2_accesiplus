@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cl.duoc.rulloa.accesiplus.data.model.FrasesRapidas
+import cl.duoc.rulloa.accesiplus.data.model.OrigenHistorial
 import cl.duoc.rulloa.accesiplus.data.model.Phrase
 import cl.duoc.rulloa.accesiplus.data.tts.EstadoTts
 import cl.duoc.rulloa.accesiplus.data.tts.TtsService
@@ -87,7 +88,7 @@ fun HablarScreen(
     LaunchedEffect(fraseInicial, estado) {
         if (fraseInicial != null && !inicialDicha && estado != EstadoTts.INICIANDO) {
             inicialDicha = true
-            viewModel.hablar(fraseInicial, frases.firstOrNull { it.text == fraseInicial })
+            viewModel.hablar(fraseInicial, frases.firstOrNull { it.text == fraseInicial }, OrigenHistorial.WIDGET)
         }
     }
 
@@ -152,7 +153,10 @@ fun HablarScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 16.dp)) {
                     Text(rapida, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(vertical = 12.dp))
-                    IconButton(onClick = { viewModel.hablar(rapida, guardada) }, modifier = Modifier.size(ALTO_TACTIL)) {
+                    IconButton(
+                        onClick = { viewModel.hablar(rapida, guardada, OrigenHistorial.FRASE_GUARDADA) },
+                        modifier = Modifier.size(ALTO_TACTIL)
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = "Decir: $rapida")
                     }
                     IconButton(

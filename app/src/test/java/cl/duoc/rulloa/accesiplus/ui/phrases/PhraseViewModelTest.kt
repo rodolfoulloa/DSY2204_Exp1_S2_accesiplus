@@ -1,14 +1,20 @@
 package cl.duoc.rulloa.accesiplus.ui.phrases
 
 import cl.duoc.rulloa.accesiplus.ReglaDispatcherPrincipal
+import cl.duoc.rulloa.accesiplus.data.model.OrigenHistorial
 import cl.duoc.rulloa.accesiplus.data.model.Phrase
+import cl.duoc.rulloa.accesiplus.data.model.RegistroHistorial
+import cl.duoc.rulloa.accesiplus.data.model.TipoHistorial
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
+import cl.duoc.rulloa.accesiplus.data.repository.HistorialRepository
 import cl.duoc.rulloa.accesiplus.data.repository.PhraseRepository
 import cl.duoc.rulloa.accesiplus.data.tts.EstadoTts
 import cl.duoc.rulloa.accesiplus.data.tts.Voz
+import cl.duoc.rulloa.accesiplus.domain.FiltroDuplicados
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -21,6 +27,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -36,7 +43,9 @@ class PhraseViewModelTest {
     private lateinit var auth: AuthRepository
     private lateinit var repo: PhraseRepository
     private lateinit var voz: Voz
+    private lateinit var historial: HistorialRepository
     private lateinit var vm: PhraseViewModel
+    private var ahora = 0L
 
     @Before
     fun preparar() {
@@ -46,7 +55,9 @@ class PhraseViewModelTest {
         }
         repo = mock { on { observarFrases("u1") } doReturn flowOf(guardadas) }
         voz = mock { on { estado } doReturn MutableStateFlow(EstadoTts.LISTO) }
-        vm = PhraseViewModel(auth, repo, voz)
+        historial = mock()
+        runBlocking { whenever(historial.agregar(any(), any())).thenReturn(Result.success("h0")) }
+        vm =PhraseViewModel(auth, repo, voz, historial, FiltroDuplicados(reloj = { ahora }))
     }
 
     @Test
@@ -114,5 +125,43 @@ class PhraseViewModelTest {
         assertEquals("La voz no está disponible. La frase se muestra en pantalla.", vm.ui.value.error)
         assertEquals("Hola", vm.ui.value.enPantalla)
         verify(repo, never()).registrarUso(any(), any())
+    }
+
+    @Test
+    fun `hablar guarda automaticamente en el historial con su origen`() = runTest {
+        whenever(voz.hablar(any())).thenReturn(true)
+        whenever(historial.agregar(any(), any())).thenReturn(Result.success("h1"))
+        vm.hablar("  Necesito ayuda ")
+        verify(historial).agregar("u1", RegistroHistorial(tipo = TipoHistorial.HABLAR, texto = "Necesito ayuda", origen = OrigenHistorial.TEXTO_LIBRE))
+        vm.hablar("Me duele aquí.", guardadas[0])
+        verify(historial).agregar(eq("u1"), argThat<RegistroHistorial> { origen == OrigenHistorial.FRASE_GUARDADA })
+        vm.hablar("Gracias", origen = OrigenHistorial.WIDGET)
+        verify(historial).agregar(eq("u1"), argThat<RegistroHistorial> { texto == "Gracias" && origen == OrigenHistorial.WIDGET })
+    }
+
+    @Test
+    fun `el resultado final de Escribir se guarda sin origen`() = runTest {
+        whenever(historial.agregar(any(), any())).thenReturn(Result.success("h2"))
+        vm.registrarEscrito("Buenos días")
+        verify(historial).agregar("u1", RegistroHistorial(tipo = TipoHistorial.ESCRIBIR, texto = "Buenos días"))
+    }
+
+    @Test
+    fun `textos vacios y dobles disparos no se guardan`() = runTest {
+        whenever(historial.agregar(any(), any())).thenReturn(Result.success("h3"))
+        vm.registrarEscrito("   ")
+        vm.registrarEscrito("Hola")
+        ahora = 300
+        vm.registrarEscrito("Hola") // doble disparo: se ignora
+        ahora = 10_000
+        vm.registrarEscrito("Hola") // ya pasó la ventana: es una solicitud nueva
+        verify(historial, times(2)).agregar(any(), any())
+    }
+
+    @Test
+    fun `si el historial falla se avisa al usuario`() = runTest {
+        whenever(historial.agregar(any(), any())).thenReturn(Result.failure(Exception("Permission denied")))
+        vm.registrarEscrito("Hola")
+        assertEquals("No se pudo guardar en el historial. No tienes permiso para ver o cambiar estos datos.", vm.ui.value.error)
     }
 }

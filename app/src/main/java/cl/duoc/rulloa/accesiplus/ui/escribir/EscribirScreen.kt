@@ -70,7 +70,11 @@ fun EscribirScreen(viewModel: PhraseViewModel, onVolver: () -> Unit) {
     val snackbar = remember { SnackbarHostState() }
     MostrarMensaje(snackbar, ui.mensaje) { viewModel.limpiarMensajes() }
 
-    val agregar: (String) -> Unit = { nuevo -> texto = if (texto.isBlank()) nuevo else "$texto $nuevo" }
+    // ReconocedorVoz solo llama aquí con el resultado final (los parciales no pasan por esta lambda)
+    val agregar: (String) -> Unit = { nuevo ->
+        texto = if (texto.isBlank()) nuevo else "$texto $nuevo"
+        viewModel.registrarEscrito(nuevo)
+    }
     val pedirMicrofono = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) reconocedor.iniciar(agregar)
     }

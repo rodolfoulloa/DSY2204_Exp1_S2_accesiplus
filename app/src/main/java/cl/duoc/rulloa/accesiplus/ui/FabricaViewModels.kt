@@ -33,7 +33,7 @@ object FabricaViewModels {
         }
         initializer {
             val c = contenedor()
-            PhraseViewModel(c.authRepository, c.phraseRepository, c.voz)
+            PhraseViewModel(c.authRepository, c.phraseRepository, c.voz, c.historialRepository)
         }
         initializer {
             val c = contenedor()

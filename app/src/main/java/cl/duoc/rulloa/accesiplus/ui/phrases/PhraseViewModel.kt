@@ -2,13 +2,19 @@ package cl.duoc.rulloa.accesiplus.ui.phrases
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cl.duoc.rulloa.accesiplus.data.model.OrigenHistorial
 import cl.duoc.rulloa.accesiplus.data.model.Phrase
+import cl.duoc.rulloa.accesiplus.data.model.RegistroHistorial
+import cl.duoc.rulloa.accesiplus.data.model.TipoHistorial
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
+import cl.duoc.rulloa.accesiplus.data.repository.HistorialRepository
 import cl.duoc.rulloa.accesiplus.data.repository.PhraseRepository
 import cl.duoc.rulloa.accesiplus.data.tts.EstadoTts
 import cl.duoc.rulloa.accesiplus.data.tts.Voz
 import cl.duoc.rulloa.accesiplus.domain.ErroresFirebase
+import cl.duoc.rulloa.accesiplus.domain.FiltroDuplicados
 import cl.duoc.rulloa.accesiplus.domain.FiltrosFrases
+import cl.duoc.rulloa.accesiplus.domain.FiltrosHistorial
 import cl.duoc.rulloa.accesiplus.domain.Validaciones
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,12 +35,17 @@ data class PhraseUiState(
     val enPantalla: String? = null
 )
 
-/** CRUD de frases para Escribir y Hablar, más la reproducción por voz. */
+/**
+ * CRUD de frases para Escribir y Hablar, más la reproducción por voz.
+ * Además guarda automáticamente cada solicitud y su respuesta en el historial.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class PhraseViewModel(
     private val auth: AuthRepository,
     private val repo: PhraseRepository,
-    private val voz: Voz
+    private val voz: Voz,
+    private val historial: HistorialRepository,
+    private val duplicados: FiltroDuplicados = FiltroDuplicados()
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(PhraseUiState())
@@ -84,8 +95,15 @@ class PhraseViewModel(
         lanzar(msg) { repo.actualizar(uid, frase.copy(favorite = !frase.favorite)) }
     }
 
-    /** Lee en voz alta y muestra la frase en grande. Si es una frase guardada, suma un uso. */
-    fun hablar(texto: String, frase: Phrase? = null) {
+    /**
+     * Lee en voz alta y muestra la frase en grande. Si es una frase guardada, suma un uso.
+     * Siempre queda en el historial: aunque no haya voz, la respuesta se mostró en pantalla.
+     */
+    fun hablar(
+        texto: String,
+        frase: Phrase? = null,
+        origen: OrigenHistorial = if (frase != null) OrigenHistorial.FRASE_GUARDADA else OrigenHistorial.TEXTO_LIBRE
+    ) {
         _ui.update { it.copy(enPantalla = texto) }
         if (!voz.hablar(texto)) {
             _ui.update { it.copy(error = "La voz no está disponible. La frase se muestra en pantalla.") }
@@ -93,6 +111,24 @@ class PhraseViewModel(
         val uid = auth.uidActual
         if (frase != null && frase.id.isNotBlank() && uid != null) {
             viewModelScope.launch { repo.registrarUso(uid, frase.id) }
+        }
+        registrarEnHistorial(TipoHistorial.HABLAR, texto, origen)
+    }
+
+    /** Escribir: se llama solo con el resultado final del reconocedor de voz (no con los parciales). */
+    fun registrarEscrito(texto: String) = registrarEnHistorial(TipoHistorial.ESCRIBIR, texto, origen = null)
+
+    private fun registrarEnHistorial(tipo: TipoHistorial, texto: String, origen: OrigenHistorial?) {
+        val uid = auth.uidActual ?: return
+        val limpio = FiltrosHistorial.prepararTexto(texto) ?: return
+        if (duplicados.esRepetido(tipo, limpio)) return
+        val registro = RegistroHistorial(tipo = tipo, texto = limpio, origen = origen)
+        // setValue deja la escritura en la caché local al instante: aunque el usuario salga
+        // de la pantalla (y se cancele esta corrutina) o no haya red, el registro no se pierde.
+        viewModelScope.launch {
+            historial.agregar(uid, registro).onFailure { e ->
+                _ui.update { it.copy(error = "No se pudo guardar en el historial. ${ErroresFirebase.mensaje(e)}") }
+            }
         }
     }
 
