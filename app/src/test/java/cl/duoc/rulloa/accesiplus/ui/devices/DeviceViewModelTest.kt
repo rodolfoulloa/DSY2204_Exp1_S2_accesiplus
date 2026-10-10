@@ -1,6 +1,8 @@
 package cl.duoc.rulloa.accesiplus.ui.devices
 
 import cl.duoc.rulloa.accesiplus.ReglaDispatcherPrincipal
+import cl.duoc.rulloa.accesiplus.VibradorDePrueba
+import cl.duoc.rulloa.accesiplus.data.haptica.PatronVibracion
 import cl.duoc.rulloa.accesiplus.data.location.Coordenadas
 import cl.duoc.rulloa.accesiplus.data.location.UbicacionProvider
 import cl.duoc.rulloa.accesiplus.data.model.Device
@@ -34,6 +36,7 @@ class DeviceViewModelTest {
     private lateinit var repo: DeviceRepository
     private lateinit var ubicacion: UbicacionProvider
     private lateinit var vm: DeviceViewModel
+    private val vibrador = VibradorDePrueba()
 
     @Before
     fun preparar() {
@@ -43,7 +46,7 @@ class DeviceViewModelTest {
         }
         repo = mock { on { observarDispositivos("u1") } doReturn flowOf(listOf(audifono)) }
         ubicacion = mock()
-        vm = DeviceViewModel(auth, repo, ubicacion)
+        vm = DeviceViewModel(auth, repo, ubicacion, vibrador.haptica)
     }
 
     @Test
@@ -52,6 +55,7 @@ class DeviceViewModelTest {
         vm.guardar(null, "  Teléfono  ", "Teléfono", "en la cocina")
         verify(repo).crear(eq("u1"), argThat<Device> { name == "Teléfono" && type == "Teléfono" && notes == "en la cocina" })
         assertEquals("Dispositivo agregado.", vm.ui.value.mensaje)
+        assertEquals(listOf(PatronVibracion.GUARDADO), vibrador.patrones)
     }
 
     @Test
@@ -68,6 +72,7 @@ class DeviceViewModelTest {
         vm.guardar(null, "   ", "Otro", "")
         verify(repo, never()).crear(any(), any())
         assertEquals("Escribe un nombre para el dispositivo.", vm.ui.value.error)
+        assertEquals(listOf(PatronVibracion.ERROR), vibrador.patrones)
     }
 
     @Test
@@ -78,6 +83,7 @@ class DeviceViewModelTest {
         verify(repo).guardarUbicacion("u1", "d1", -33.4569, -70.6483)
         assertEquals("Ubicación guardada para Audífono derecho.", vm.ui.value.mensaje)
         assertNull(vm.ui.value.ubicando)
+        assertEquals(listOf(PatronVibracion.GUARDADO), vibrador.patrones)
     }
 
     @Test

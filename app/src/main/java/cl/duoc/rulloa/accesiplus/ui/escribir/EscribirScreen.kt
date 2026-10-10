@@ -25,6 +25,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,7 +79,11 @@ fun EscribirScreen(viewModel: PhraseViewModel, onVolver: () -> Unit, onVolverMen
         texto = if (texto.isBlank()) nuevo else "$texto $nuevo"
         viewModel.registrarEscrito(nuevo)
     }
-    val pedirMicrofono = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+    // Cada error nuevo del reconocedor vibra (patrón largo): el usuario sordo no oye que falló
+    LaunchedEffect(reconocedor.error) {
+        if (reconocedor.error != null) viewModel.avisarErrorReconocedor()
+    }
+    val pedirMicrofono =rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) reconocedor.iniciar(agregar)
     }
 

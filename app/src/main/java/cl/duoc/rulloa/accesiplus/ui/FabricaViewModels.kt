@@ -26,7 +26,7 @@ object FabricaViewModels {
     val Factory: ViewModelProvider.Factory = viewModelFactory {
         initializer {
             val c = contenedor()
-            AuthViewModel(c.authRepository, c.userRepository)
+            AuthViewModel(c.authRepository, c.userRepository, c.haptica)
         }
         initializer {
             val c = contenedor()
@@ -34,11 +34,11 @@ object FabricaViewModels {
         }
         initializer {
             val c = contenedor()
-            PhraseViewModel(c.authRepository, c.phraseRepository, c.voz, c.historialRepository)
+            PhraseViewModel(c.authRepository, c.phraseRepository, c.voz, c.historialRepository, c.haptica)
         }
         initializer {
             val c = contenedor()
-            HistorialViewModel(c.authRepository, c.historialRepository, c.voz)
+            HistorialViewModel(c.authRepository, c.historialRepository, c.voz, c.haptica)
         }
         initializer {
             val c = contenedor()
@@ -46,7 +46,7 @@ object FabricaViewModels {
         }
         initializer {
             val c = contenedor()
-            DeviceViewModel(c.authRepository, c.deviceRepository, c.ubicacion)
+            DeviceViewModel(c.authRepository, c.deviceRepository, c.ubicacion, c.haptica)
         }
     }
 }

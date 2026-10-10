@@ -2,6 +2,8 @@ package cl.duoc.rulloa.accesiplus.ui.historial
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cl.duoc.rulloa.accesiplus.data.haptica.EventoHaptico
+import cl.duoc.rulloa.accesiplus.data.haptica.Haptica
 import cl.duoc.rulloa.accesiplus.data.model.RegistroHistorial
 import cl.duoc.rulloa.accesiplus.data.model.TipoHistorial
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
@@ -39,6 +41,7 @@ class HistorialViewModel(
     private val auth: AuthRepository,
     private val repo: HistorialRepository,
     private val voz: Voz,
+    private val haptica: Haptica,
     private val zona: TimeZone = TimeZone.getDefault()
 ) : ViewModel() {
 
@@ -71,6 +74,7 @@ class HistorialViewModel(
     fun repetir(registro: RegistroHistorial) {
         if (!voz.hablar(registro.texto)) {
             _ui.update { it.copy(error = "La voz no está disponible en este momento.") }
+            haptica.avisar(EventoHaptico.ERROR_VOZ)
         }
     }
 
@@ -84,6 +88,7 @@ class HistorialViewModel(
                     eliminado = if (res.isSuccess) registro else null
                 )
             }
+            if (res.isFailure) haptica.avisar(EventoHaptico.ERROR_GUARDADO)
         }
     }
 
@@ -99,6 +104,8 @@ class HistorialViewModel(
                     mensaje = if (res.isSuccess) "Registro recuperado." else null
                 )
             }
+            // Deshacer vuelve a guardar el registro: doble toque como cualquier guardado
+            haptica.avisar(if (res.isSuccess) EventoHaptico.REGISTRO_RECUPERADO else EventoHaptico.ERROR_GUARDADO)
         }
     }
 
@@ -113,6 +120,7 @@ class HistorialViewModel(
                     eliminado = null
                 )
             }
+            if (res.isFailure) haptica.avisar(EventoHaptico.ERROR_GUARDADO)
         }
     }
 

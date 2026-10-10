@@ -1,6 +1,8 @@
 package cl.duoc.rulloa.accesiplus.ui.phrases
 
 import cl.duoc.rulloa.accesiplus.ReglaDispatcherPrincipal
+import cl.duoc.rulloa.accesiplus.VibradorDePrueba
+import cl.duoc.rulloa.accesiplus.data.haptica.PatronVibracion
 import cl.duoc.rulloa.accesiplus.data.model.OrigenHistorial
 import cl.duoc.rulloa.accesiplus.data.model.Phrase
 import cl.duoc.rulloa.accesiplus.data.model.RegistroHistorial
@@ -9,8 +11,10 @@ import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
 import cl.duoc.rulloa.accesiplus.data.repository.HistorialRepository
 import cl.duoc.rulloa.accesiplus.data.repository.PhraseRepository
 import cl.duoc.rulloa.accesiplus.data.tts.EstadoTts
+import cl.duoc.rulloa.accesiplus.data.tts.FinVoz
 import cl.duoc.rulloa.accesiplus.data.tts.Voz
 import cl.duoc.rulloa.accesiplus.domain.FiltroDuplicados
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -49,6 +53,8 @@ class PhraseViewModelTest {
     private lateinit var historial: HistorialRepository
     private lateinit var vm: PhraseViewModel
     private var ahora = 0L
+    private val vibrador = VibradorDePrueba()
+    private val finVoz = MutableSharedFlow<FinVoz>()
 
     @Before
     fun preparar() {
@@ -60,10 +66,11 @@ class PhraseViewModelTest {
         voz = mock {
             on { estado } doReturn MutableStateFlow(EstadoTts.LISTO)
             on { hablando } doReturn MutableStateFlow(false)
+            on { finalizaciones } doReturn finVoz
         }
         historial = mock()
         runBlocking { whenever(historial.agregar(any(), any())).thenReturn(Result.success("h0")) }
-        vm =PhraseViewModel(auth, repo, voz, historial, FiltroDuplicados(reloj = { ahora }))
+        vm = PhraseViewModel(auth, repo, voz, historial, vibrador.haptica, FiltroDuplicados(reloj = { ahora }))
     }
 
     @Test
@@ -182,6 +189,40 @@ class PhraseViewModelTest {
         vm.hablar("Chao")
         assertNull(vm.ui.value.error)
         assertTrue(vm.ui.value.completada)
+    }
+
+    @Test
+    fun `guardar una frase vibra con doble toque y un error vibra largo`() = runTest {
+        whenever(repo.crear(any(), any())).thenReturn(Result.success("nuevo"))
+        vm.crear("Necesito ayuda", Phrase.CATEGORIA_PROPIA)
+        vm.crear("   ", Phrase.CATEGORIA_PROPIA)
+        assertEquals(listOf(PatronVibracion.GUARDADO, PatronVibracion.ERROR), vibrador.patrones)
+    }
+
+    @Test
+    fun `Escribir vibra al terminar de escuchar y ante errores del reconocedor`() = runTest {
+        vm.registrarEscrito("Buenos días")
+        vm.avisarErrorReconocedor()
+        assertEquals(listOf(PatronVibracion.EXITO, PatronVibracion.ERROR), vibrador.patrones)
+    }
+
+    @Test
+    fun `Hablar vibra al terminar la reproduccion y ante errores de la voz`() = runTest {
+        finVoz.emit(FinVoz.TERMINADA)
+        finVoz.emit(FinVoz.ERROR)
+        whenever(voz.hablar(any())).thenReturn(false)
+        vm.hablar("Hola")
+        assertEquals(listOf(PatronVibracion.EXITO, PatronVibracion.ERROR, PatronVibracion.ERROR), vibrador.patrones)
+    }
+
+    @Test
+    fun `con el interruptor apagado ninguna accion vibra`() = runTest {
+        vibrador.activa = false
+        whenever(repo.crear(any(), any())).thenReturn(Result.success("nuevo"))
+        vm.crear("Necesito ayuda", Phrase.CATEGORIA_PROPIA)
+        vm.registrarEscrito("Hola")
+        finVoz.emit(FinVoz.TERMINADA)
+        assertTrue(vibrador.patrones.isEmpty())
     }
 
     @Test

@@ -1,6 +1,8 @@
 package cl.duoc.rulloa.accesiplus.ui.historial
 
 import cl.duoc.rulloa.accesiplus.ReglaDispatcherPrincipal
+import cl.duoc.rulloa.accesiplus.VibradorDePrueba
+import cl.duoc.rulloa.accesiplus.data.haptica.PatronVibracion
 import cl.duoc.rulloa.accesiplus.data.model.RegistroHistorial
 import cl.duoc.rulloa.accesiplus.data.model.TipoHistorial
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
@@ -41,6 +43,7 @@ class HistorialViewModelTest {
     private lateinit var repo: HistorialRepository
     private lateinit var voz: Voz
     private lateinit var vm: HistorialViewModel
+    private val vibrador = VibradorDePrueba()
 
     @Before
     fun preparar() {
@@ -50,7 +53,7 @@ class HistorialViewModelTest {
         }
         repo = mock { on { observar("u1") } doReturn flowOf(registros) }
         voz = mock()
-        vm = HistorialViewModel(auth, repo, voz, TimeZone.getTimeZone("UTC"))
+        vm = HistorialViewModel(auth, repo, voz, vibrador.haptica, TimeZone.getTimeZone("UTC"))
     }
 
     private fun TestScope.observar() {
@@ -102,6 +105,8 @@ class HistorialViewModelTest {
         verify(repo).restaurar("u1", registros[0])
         assertNull(vm.ui.value.eliminado)
         assertEquals("Registro recuperado.", vm.ui.value.mensaje)
+        // Borrar no vibra; recuperar el registro es un guardado (doble toque)
+        assertEquals(listOf(PatronVibracion.GUARDADO), vibrador.patrones)
     }
 
     @Test
@@ -110,6 +115,7 @@ class HistorialViewModelTest {
         vm.eliminar(registros[0])
         assertNull(vm.ui.value.eliminado)
         assertEquals("No tienes permiso para ver o cambiar estos datos.", vm.ui.value.error)
+        assertEquals(listOf(PatronVibracion.ERROR), vibrador.patrones)
     }
 
     @Test

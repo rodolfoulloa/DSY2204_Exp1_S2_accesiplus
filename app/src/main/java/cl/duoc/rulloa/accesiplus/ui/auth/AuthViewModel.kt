@@ -2,6 +2,8 @@ package cl.duoc.rulloa.accesiplus.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cl.duoc.rulloa.accesiplus.data.haptica.EventoHaptico
+import cl.duoc.rulloa.accesiplus.data.haptica.Haptica
 import cl.duoc.rulloa.accesiplus.data.model.UserProfile
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
 import cl.duoc.rulloa.accesiplus.data.repository.UserRepository
@@ -32,6 +34,7 @@ data class AuthUiState(
 class AuthViewModel(
     private val auth: AuthRepository,
     private val usuarios: UserRepository,
+    private val haptica: Haptica,
     private val reloj: () -> Long = System::currentTimeMillis,
     // Inyectable: android.util.Patterns no existe en pruebas JVM puras (se prueba aparte con Robolectric)
     private val validarCorreo: (String) -> Boolean = Validaciones::isEmailValid
@@ -51,6 +54,7 @@ class AuthViewModel(
     fun login(correo: String, clave: String) {
         if (!isEmailValid(correo) || clave.isEmpty()) {
             _ui.update { it.copy(error = "Escribe un correo válido y tu contraseña.") }
+            haptica.avisar(EventoHaptico.ERROR_LOGIN)
             return
         }
         ejecutar { auth.iniciarSesion(correo, clave).map { } }
@@ -94,6 +98,8 @@ class AuthViewModel(
                     mensaje = if (res.isSuccess) exito else null
                 )
             }
+            // Clave incorrecta, sin red, correo ya usado…: vibración larga junto al texto rojo
+            if (res.isFailure) haptica.avisar(EventoHaptico.ERROR_LOGIN)
         }
     }
 }

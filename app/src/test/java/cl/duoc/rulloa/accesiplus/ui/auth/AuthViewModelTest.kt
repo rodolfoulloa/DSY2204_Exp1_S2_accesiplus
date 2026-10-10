@@ -1,6 +1,8 @@
 package cl.duoc.rulloa.accesiplus.ui.auth
 
 import cl.duoc.rulloa.accesiplus.ReglaDispatcherPrincipal
+import cl.duoc.rulloa.accesiplus.VibradorDePrueba
+import cl.duoc.rulloa.accesiplus.data.haptica.PatronVibracion
 import cl.duoc.rulloa.accesiplus.data.model.UserProfile
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
 import cl.duoc.rulloa.accesiplus.data.repository.UserRepository
@@ -9,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -31,6 +34,7 @@ class AuthViewModelTest {
     private lateinit var auth: AuthRepository
     private lateinit var usuarios: UserRepository
     private lateinit var vm: AuthViewModel
+    private val vibrador = VibradorDePrueba()
 
     // Validación simple de correo para JVM (la real usa android.util.Patterns)
     private val correoSimple: (String) -> Boolean = { it.contains("@") && it.contains(".") }
@@ -39,7 +43,7 @@ class AuthViewModelTest {
     fun preparar() {
         auth = mock { on { estadoSesion() } doReturn sesion }
         usuarios = mock()
-        vm = AuthViewModel(auth, usuarios, reloj = { 1000L }, validarCorreo = correoSimple)
+        vm = AuthViewModel(auth, usuarios, vibrador.haptica, reloj = { 1000L }, validarCorreo = correoSimple)
     }
 
     @Test
@@ -56,6 +60,7 @@ class AuthViewModelTest {
         vm.login("correo-malo", "123456")
         verify(auth, never()).iniciarSesion(any(), any())
         assertEquals("Escribe un correo válido y tu contraseña.", vm.ui.value.error)
+        assertEquals(listOf(PatronVibracion.ERROR), vibrador.patrones)
     }
 
     @Test
@@ -65,6 +70,7 @@ class AuthViewModelTest {
         verify(auth).iniciarSesion("ana@correo.cl", "secreta")
         assertNull(vm.ui.value.error)
         assertEquals(false, vm.ui.value.cargando)
+        assertTrue(vibrador.patrones.isEmpty()) // login correcto: sin vibración de error
     }
 
     @Test
@@ -73,6 +79,7 @@ class AuthViewModelTest {
         whenever(auth.iniciarSesion(any(), any())).thenReturn(Result.failure(error))
         vm.login("ana@correo.cl", "mala")
         assertEquals("Correo o contraseña incorrectos.", vm.ui.value.error)
+        assertEquals(listOf(PatronVibracion.ERROR), vibrador.patrones)
     }
 
     @Test

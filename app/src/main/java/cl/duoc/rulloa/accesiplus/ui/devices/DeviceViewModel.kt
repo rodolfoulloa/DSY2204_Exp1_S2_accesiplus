@@ -2,6 +2,8 @@ package cl.duoc.rulloa.accesiplus.ui.devices
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cl.duoc.rulloa.accesiplus.data.haptica.EventoHaptico
+import cl.duoc.rulloa.accesiplus.data.haptica.Haptica
 import cl.duoc.rulloa.accesiplus.data.location.UbicacionProvider
 import cl.duoc.rulloa.accesiplus.data.model.Device
 import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
@@ -31,7 +33,8 @@ data class DeviceUiState(
 class DeviceViewModel(
     private val auth: AuthRepository,
     private val repo: DeviceRepository,
-    private val ubicacion: UbicacionProvider
+    private val ubicacion: UbicacionProvider,
+    private val haptica: Haptica
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(DeviceUiState())
@@ -48,6 +51,7 @@ class DeviceViewModel(
         val uid = auth.uidActual ?: return
         if (!esValido(nombre)) {
             _ui.update { it.copy(error = "Escribe un nombre para el dispositivo.") }
+            haptica.avisar(EventoHaptico.ERROR_GUARDADO)
             return
         }
         viewModelScope.launch {
@@ -58,6 +62,7 @@ class DeviceViewModel(
                 repo.actualizar(uid, actual.copy(name = nombre.trim(), type = tipo, notes = notas.trim()))
             }
             terminar(res, if (actual == null) "Dispositivo agregado." else "Dispositivo actualizado.")
+            haptica.avisar(if (res.isSuccess) EventoHaptico.DISPOSITIVO_GUARDADO else EventoHaptico.ERROR_GUARDADO)
         }
     }
 
@@ -84,6 +89,7 @@ class DeviceViewModel(
                     mensaje = if (res.isSuccess) "Ubicación guardada para ${dispositivo.name}." else null
                 )
             }
+            haptica.avisar(if (res.isSuccess) EventoHaptico.DISPOSITIVO_GUARDADO else EventoHaptico.ERROR_GUARDADO)
         }
     }
 
