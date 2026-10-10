@@ -34,6 +34,8 @@ import cl.duoc.rulloa.accesiplus.ui.devices.BuscarDispositivoScreen
 import cl.duoc.rulloa.accesiplus.ui.devices.DeviceViewModel
 import cl.duoc.rulloa.accesiplus.ui.escribir.EscribirScreen
 import cl.duoc.rulloa.accesiplus.ui.hablar.HablarScreen
+import cl.duoc.rulloa.accesiplus.ui.historial.HistorialScreen
+import cl.duoc.rulloa.accesiplus.ui.historial.HistorialViewModel
 import cl.duoc.rulloa.accesiplus.ui.home.HomeMenuScreen
 import cl.duoc.rulloa.accesiplus.ui.home.TamanoVentana
 import cl.duoc.rulloa.accesiplus.ui.phrases.PhraseViewModel
@@ -59,6 +61,7 @@ object Rutas {
     const val HABLAR = "hablar?$ARG_FRASE={$ARG_FRASE}"
     const val BUSCAR = "buscar_dispositivo"
     const val PERFIL = "perfil"
+    const val HISTORIAL = "historial"
 
     fun hablar(frase: String? = null) =
         if (frase == null) "hablar" else "hablar?$ARG_FRASE=${Uri.encode(frase)}"
@@ -114,6 +117,7 @@ fun AccesiPlusNavHost(
                     onEscribir = { navController.navigate(Rutas.ESCRIBIR) },
                     onHablar = { navController.navigate(Rutas.hablar()) },
                     onBuscar = { navController.navigate(Rutas.BUSCAR) },
+                    onHistorial = { navController.navigate(Rutas.HISTORIAL) },
                     onPerfil = { navController.navigate(Rutas.PERFIL) }
                 )
             }
@@ -145,6 +149,10 @@ fun AccesiPlusNavHost(
                     onVolver = { navController.popBackStack() },
                     contenidoExtra = contenidoBuscar
                 )
+            }
+            composable(Rutas.HISTORIAL) {
+                val vm: HistorialViewModel = viewModel(factory = FabricaViewModels.Factory)
+                HistorialScreen(viewModel = vm, onVolver = { navController.popBackStack() })
             }
             composable(Rutas.PERFIL) {
                 val vm: ProfileViewModel = viewModel(factory = FabricaViewModels.Factory)

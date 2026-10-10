@@ -9,6 +9,7 @@ import cl.duoc.rulloa.accesiplus.AccesiPlusApp
 import cl.duoc.rulloa.accesiplus.di.AppContainer
 import cl.duoc.rulloa.accesiplus.ui.auth.AuthViewModel
 import cl.duoc.rulloa.accesiplus.ui.devices.DeviceViewModel
+import cl.duoc.rulloa.accesiplus.ui.historial.HistorialViewModel
 import cl.duoc.rulloa.accesiplus.ui.phrases.PhraseViewModel
 import cl.duoc.rulloa.accesiplus.ui.profile.ProfileViewModel
 
@@ -33,6 +34,10 @@ object FabricaViewModels {
         initializer {
             val c = contenedor()
             PhraseViewModel(c.authRepository, c.phraseRepository, c.voz)
+        }
+        initializer {
+            val c = contenedor()
+            HistorialViewModel(c.authRepository, c.historialRepository, c.voz)
         }
         initializer {
             val c = contenedor()

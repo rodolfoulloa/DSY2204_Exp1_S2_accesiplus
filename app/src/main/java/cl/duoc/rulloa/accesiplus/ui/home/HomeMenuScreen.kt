@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -63,6 +64,7 @@ fun HomeMenuScreen(
     onEscribir: () -> Unit,
     onHablar: () -> Unit,
     onBuscar: () -> Unit,
+    onHistorial: () -> Unit,
     onPerfil: () -> Unit
 ) {
     val perfil by perfilViewModel.perfil.collectAsStateWithLifecycle()
@@ -71,6 +73,8 @@ fun HomeMenuScreen(
             { MaterialTheme.colorScheme.primaryContainer }, onEscribir),
         OpcionMenu("Hablar", "El teléfono dice tus frases", Icons.AutoMirrored.Filled.VolumeUp, "menu_hablar",
             { MaterialTheme.colorScheme.secondaryContainer }, onHablar),
+        OpcionMenu("Historial", "Lo que escuchaste y dijiste", Icons.Filled.History, "menu_historial",
+            { MaterialTheme.colorScheme.surfaceVariant }, onHistorial),
         OpcionMenu("Buscar dispositivo", "Dónde dejaste tu audífono o teléfono", Icons.Filled.LocationOn, "menu_buscar",
             { MaterialTheme.colorScheme.tertiaryContainer }, onBuscar),
         OpcionMenu("Mi perfil", "Tus datos y cerrar sesión", Icons.Filled.AccountCircle, "menu_perfil",
