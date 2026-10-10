@@ -34,7 +34,13 @@ users/
       {phraseId}/ text, category, favorite, uses, createdAt, updatedAt
     devices/
       {deviceId}/ name, type, notes, lat, lon, locationAt, createdAt
+    history/
+      {pushId}/   tipo (ESCRIBIR | HABLAR), texto, origen?, timestamp (hora del servidor)
 ```
+
+`history` se llena solo: Escribir guarda cada resultado final del reconocimiento de voz y Hablar
+cada texto que se dice en voz alta (texto libre, frase guardada o widget). La app lee los últimos
+200 registros ordenados por `timestamp`.
 
 ## Reglas de seguridad
 
@@ -44,14 +50,20 @@ El archivo [`database.rules.json`](database.rules.json) contiene las reglas defi
 - `users/$uid` solo lo puede leer y escribir su dueño: `auth != null && auth.uid === $uid`.
 - `.validate` en `profile`, `phrases` y `devices`: campos obligatorios, tipos, largos máximos,
   rangos de latitud/longitud, `email` igual al del token y rechazo de campos desconocidos (`$otro`).
+- `history`: `tipo` solo `ESCRIBIR` o `HABLAR`, `texto` de 1 a 2000 caracteres, `origen` dentro
+  de los valores conocidos, `timestamp` numérico no futuro y `.indexOn` sobre `timestamp`.
 
-### Publicar las reglas (manual)
+### Publicar las reglas
 
-La base se creó en **modo de prueba** (abierta por 30 días). Antes de entregar:
+Con Firebase CLI (`firebase.json` y `.firebaserc` ya apuntan al proyecto `accesiplus`):
 
-1. Abrir la consola de Firebase → **Realtime Database** → pestaña **Reglas**.
-2. Pegar el contenido de `database.rules.json`.
-3. Presionar **Publicar**.
+```
+firebase login
+firebase deploy --only database
+```
+
+O en la consola de Firebase → **Realtime Database** → pestaña **Reglas**: pegar el contenido de
+`database.rules.json` y presionar **Publicar**.
 
 ## Compilar y probar
 
