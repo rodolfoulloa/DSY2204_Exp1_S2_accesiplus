@@ -13,11 +13,12 @@ cotidiano, guardar frases y registrar dónde quedaron sus dispositivos (audífon
 
 La app se distribuye con **Firebase App Distribution**:
 
-**[Descargar AccesiPlus en App Distribution](https://appdistribution.firebase.google.com/testerapps/1:147620891282:android:df5fbfbc1ecb8f4d8db44b/releases/2mccj3ef71um8?utm_source=firebase-console)**
+**[Descargar AccesiPlus en App Distribution](https://appdistribution.firebase.dev/i/6b3a888a4f074495)**
 
-1. Abre el enlace desde el teléfono Android e inicia sesión con la cuenta de Google que recibió
-   la invitación de prueba (si no la tienes, pídela al autor del proyecto).
-2. Acepta la invitación y toca **Descargar** en la versión más reciente.
+1. Abre el enlace desde el teléfono Android, escribe tu correo de Google y acepta participar
+   como tester. No necesitas una invitación previa.
+2. Revisa tu correo, abre la invitación de Firebase App Distribution e inicia sesión con esa
+   misma cuenta. Toca **Descargar** en la versión más reciente (1.1.0).
 3. Abre el archivo descargado. Android pedirá permiso para instalar apps de orígenes desconocidos:
    - Android 8 o superior: **Ajustes → Apps → Acceso especial → Instalar apps desconocidas**,
      elige el navegador (por ejemplo, Chrome) y activa **Permitir de esta fuente**.
