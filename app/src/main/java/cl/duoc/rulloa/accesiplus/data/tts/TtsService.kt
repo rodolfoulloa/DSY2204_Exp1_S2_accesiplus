@@ -3,6 +3,7 @@ package cl.duoc.rulloa.accesiplus.data.tts
 import android.content.Context
 import android.content.Intent
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +24,9 @@ enum class EstadoTts {
 
 interface Voz {
     val estado: StateFlow<EstadoTts>
+
+    /** true mientras el motor está diciendo una frase (UtteranceProgressListener). */
+    val hablando: StateFlow<Boolean>
     fun hablar(texto: String): Boolean
     fun detener()
 }
@@ -35,6 +39,20 @@ class TtsService(context: Context) : Voz, TextToSpeech.OnInitListener {
 
     private val _estado = MutableStateFlow(EstadoTts.INICIANDO)
     override val estado: StateFlow<EstadoTts> = _estado.asStateFlow()
+
+    private val _hablando = MutableStateFlow(false)
+    override val hablando: StateFlow<Boolean> = _hablando.asStateFlow()
+
+    /** Los callbacks llegan en un hilo del motor de voz: MutableStateFlow es seguro entre hilos. */
+    private val progreso = object : UtteranceProgressListener() {
+        override fun onStart(utteranceId: String?) { _hablando.value = true }
+        override fun onDone(utteranceId: String?) { _hablando.value = false }
+        override fun onStop(utteranceId: String?, interrupted: Boolean) { _hablando.value = false }
+
+        @Deprecated("Requerido por la clase base en API 21+")
+        override fun onError(utteranceId: String?) { _hablando.value = false }
+        override fun onError(utteranceId: String?, errorCode: Int) { _hablando.value = false }
+    }
 
     private val tts: TextToSpeech? = try {
         TextToSpeech(context.applicationContext, this)
@@ -50,6 +68,7 @@ class TtsService(context: Context) : Voz, TextToSpeech.OnInitListener {
             _estado.value = EstadoTts.SIN_MOTOR
             return
         }
+        motor.setOnUtteranceProgressListener(progreso)
         // Prueba español de Chile, luego latino y luego cualquier español
         val idiomas = listOf("es-CL", "es-419", "es-US", "es-ES", "es").map(Locale::forLanguageTag)
         val elegido = idiomas.firstOrNull { loc ->
@@ -73,6 +92,7 @@ class TtsService(context: Context) : Voz, TextToSpeech.OnInitListener {
 
     override fun detener() {
         tts?.stop()
+        _hablando.value = false
     }
 
     companion object {
