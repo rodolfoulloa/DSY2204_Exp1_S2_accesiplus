@@ -5,8 +5,11 @@ import android.content.Intent
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 
@@ -22,11 +25,16 @@ enum class EstadoTts {
     SIN_MOTOR
 }
 
+enum class FinVoz { TERMINADA, ERROR }
+
 interface Voz {
     val estado: StateFlow<EstadoTts>
 
     /** true mientras el motor está diciendo una frase (UtteranceProgressListener). */
     val hablando: StateFlow<Boolean>
+
+    /** Evento por cada frase que termina sola o con error (no cuando el usuario la detiene). */
+    val finalizaciones: SharedFlow<FinVoz>
     fun hablar(texto: String): Boolean
     fun detener()
 }
@@ -43,15 +51,30 @@ class TtsService(context: Context) : Voz, TextToSpeech.OnInitListener {
     private val _hablando = MutableStateFlow(false)
     override val hablando: StateFlow<Boolean> = _hablando.asStateFlow()
 
-    /** Los callbacks llegan en un hilo del motor de voz: MutableStateFlow es seguro entre hilos. */
+    // Con búfer: tryEmit nunca bloquea el hilo del motor de voz
+    private val _finalizaciones = MutableSharedFlow<FinVoz>(extraBufferCapacity = 8)
+    override val finalizaciones: SharedFlow<FinVoz> = _finalizaciones.asSharedFlow()
+
+    /** Los callbacks llegan en un hilo del motor de voz: los Flow de corrutinas son seguros entre hilos. */
     private val progreso = object : UtteranceProgressListener() {
         override fun onStart(utteranceId: String?) { _hablando.value = true }
-        override fun onDone(utteranceId: String?) { _hablando.value = false }
+
+        override fun onDone(utteranceId: String?) {
+            _hablando.value = false
+            _finalizaciones.tryEmit(FinVoz.TERMINADA)
+        }
+
+        // Detenida por el usuario (cerrar la pantalla grande): no es un éxito ni un error
         override fun onStop(utteranceId: String?, interrupted: Boolean) { _hablando.value = false }
 
         @Deprecated("Requerido por la clase base en API 21+")
-        override fun onError(utteranceId: String?) { _hablando.value = false }
-        override fun onError(utteranceId: String?, errorCode: Int) { _hablando.value = false }
+        override fun onError(utteranceId: String?) = fallo()
+        override fun onError(utteranceId: String?, errorCode: Int) = fallo()
+
+        private fun fallo() {
+            _hablando.value = false
+            _finalizaciones.tryEmit(FinVoz.ERROR)
+        }
     }
 
     private val tts: TextToSpeech? = try {
