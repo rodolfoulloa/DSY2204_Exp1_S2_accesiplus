@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -30,6 +32,10 @@ import cl.duoc.rulloa.accesiplus.ui.auth.EstadoSesion
 import cl.duoc.rulloa.accesiplus.ui.auth.LoginScreen
 import cl.duoc.rulloa.accesiplus.ui.auth.RecoverPasswordScreen
 import cl.duoc.rulloa.accesiplus.ui.auth.RegisterScreen
+import cl.duoc.rulloa.accesiplus.ui.ayuda.AyudaScreen
+import cl.duoc.rulloa.accesiplus.ui.components.LocalAbrirAyuda
+import cl.duoc.rulloa.accesiplus.ui.tutorial.TutorialScreen
+import cl.duoc.rulloa.accesiplus.ui.tutorial.TutorialViewModel
 import cl.duoc.rulloa.accesiplus.ui.devices.BuscarDispositivoScreen
 import cl.duoc.rulloa.accesiplus.ui.devices.DeviceViewModel
 import cl.duoc.rulloa.accesiplus.ui.escribir.EscribirScreen
@@ -62,9 +68,25 @@ object Rutas {
     const val BUSCAR = "buscar_dispositivo"
     const val PERFIL = "perfil"
     const val HISTORIAL = "historial"
+    const val AYUDA = "ayuda"
+    const val TUTORIAL = "tutorial"
 
     fun hablar(frase: String? = null) =
         if (frase == null) "hablar" else "hablar?$ARG_FRASE=${Uri.encode(frase)}"
+}
+
+/**
+ * Paso 8 del flujo: vuelve al HomeMenú quitando todo lo que esté encima. popBackStack hasta
+ * HOME reutiliza el Home que ya está en la pila, así nunca quedan dos Home seguidos.
+ * Si por algún motivo HOME no estuviera en la pila, se navega a él una sola vez.
+ */
+fun NavController.volverAlMenu() {
+    if (!popBackStack(Rutas.HOME, inclusive = false)) {
+        navigate(Rutas.HOME) {
+            popUpTo(Rutas.GRAFO_APP) { inclusive = false }
+            launchSingleTop = true
+        }
+    }
 }
 
 /**
@@ -89,74 +111,106 @@ fun AccesiPlusNavHost(
         return
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = if (sesion is EstadoSesion.Activa) Rutas.GRAFO_APP else Rutas.GRAFO_AUTH
-    ) {
-        navigation(route = Rutas.GRAFO_AUTH, startDestination = Rutas.LOGIN) {
-            composable(Rutas.LOGIN) {
-                LoginScreen(
-                    viewModel = authViewModel,
-                    onRegisterClick = { navController.navigate(Rutas.REGISTRO) },
-                    onRecoverPasswordClick = { navController.navigate(Rutas.RECUPERAR) }
-                )
-            }
-            composable(Rutas.REGISTRO) {
-                RegisterScreen(viewModel = authViewModel, onBackToLogin = { navController.popBackStack() })
-            }
-            composable(Rutas.RECUPERAR) {
-                RecoverPasswordScreen(viewModel = authViewModel, onBackToLogin = { navController.popBackStack() })
-            }
-        }
-        navigation(route = Rutas.GRAFO_APP, startDestination = Rutas.HOME) {
-            composable(Rutas.HOME) {
-                val perfilVm: ProfileViewModel = viewModel(factory = FabricaViewModels.Factory)
-                HomeMenuScreen(
-                    perfilViewModel = perfilVm,
-                    tamano = tamano,
-                    onEscribir = { navController.navigate(Rutas.ESCRIBIR) },
-                    onHablar = { navController.navigate(Rutas.hablar()) },
-                    onBuscar = { navController.navigate(Rutas.BUSCAR) },
-                    onHistorial = { navController.navigate(Rutas.HISTORIAL) },
-                    onPerfil = { navController.navigate(Rutas.PERFIL) }
-                )
-            }
-            composable(Rutas.ESCRIBIR) {
-                val vm: PhraseViewModel = viewModel(factory = FabricaViewModels.Factory)
-                EscribirScreen(viewModel = vm, onVolver = { navController.popBackStack() })
-            }
-            composable(
-                Rutas.HABLAR,
-                arguments = listOf(navArgument(Rutas.ARG_FRASE) { type = NavType.StringType; nullable = true })
-            ) { entrada ->
-                val vm: PhraseViewModel = viewModel(factory = FabricaViewModels.Factory)
-                val context = LocalContext.current
-                // Palette se calcula una vez por pantalla, fuera del hilo principal
-                val colores by produceState(emptyMap<String, Color>()) {
-                    value = ColoresCategoria.calcular(context, FrasesRapidas.nombres)
+    // Ícono de ayuda en la barra superior de todas las pantallas internas (solo con sesión)
+    val abrirAyuda: (() -> Unit)? = if (sesion is EstadoSesion.Activa) {
+        { navController.navigate(Rutas.AYUDA) { launchSingleTop = true } }
+    } else null
+
+    CompositionLocalProvider(LocalAbrirAyuda provides abrirAyuda) {
+        NavHost(
+            navController = navController,
+            startDestination = if (sesion is EstadoSesion.Activa) Rutas.GRAFO_APP else Rutas.GRAFO_AUTH
+        ) {
+            navigation(route = Rutas.GRAFO_AUTH, startDestination = Rutas.LOGIN) {
+                composable(Rutas.LOGIN) {
+                    LoginScreen(
+                        viewModel = authViewModel,
+                        onRegisterClick = { navController.navigate(Rutas.REGISTRO) },
+                        onRecoverPasswordClick = { navController.navigate(Rutas.RECUPERAR) }
+                    )
                 }
-                HablarScreen(
-                    viewModel = vm,
-                    onVolver = { navController.popBackStack() },
-                    fraseInicial = entrada.arguments?.getString(Rutas.ARG_FRASE),
-                    colorCategoria = { colores[it] }
-                )
+                composable(Rutas.REGISTRO) {
+                    RegisterScreen(viewModel = authViewModel, onBackToLogin = { navController.popBackStack() })
+                }
+                composable(Rutas.RECUPERAR) {
+                    RecoverPasswordScreen(viewModel = authViewModel, onBackToLogin = { navController.popBackStack() })
+                }
             }
-            composable(Rutas.BUSCAR) {
-                val vm: DeviceViewModel = viewModel(factory = FabricaViewModels.Factory)
-                BuscarDispositivoScreen(
-                    viewModel = vm,
-                    onVolver = { navController.popBackStack() },
-                    contenidoExtra = contenidoBuscar
-                )
-            }
-            composable(Rutas.HISTORIAL) {
-                val vm: HistorialViewModel = viewModel(factory = FabricaViewModels.Factory)
-                HistorialScreen(viewModel = vm, onVolver = { navController.popBackStack() })
-            }
-            composable(Rutas.PERFIL) {
-                val vm: ProfileViewModel = viewModel(factory = FabricaViewModels.Factory)
-                ProfileScreen(viewModel = vm, onVolver = { navController.popBackStack() })
+            navigation(route = Rutas.GRAFO_APP, startDestination = Rutas.HOME) {
+                composable(Rutas.HOME) {
+                    val perfilVm: ProfileViewModel = viewModel(factory = FabricaViewModels.Factory)
+                    val tutorialVm: TutorialViewModel = viewModel(factory = FabricaViewModels.Factory)
+                    // Primer inicio de este usuario: se muestra el tutorial encima del menú
+                    LaunchedEffect(Unit) {
+                        if (tutorialVm.debeMostrar()) navController.navigate(Rutas.TUTORIAL) { launchSingleTop = true }
+                    }
+                    HomeMenuScreen(
+                        perfilViewModel = perfilVm,
+                        tamano = tamano,
+                        onEscribir = { navController.navigate(Rutas.ESCRIBIR) },
+                        onHablar = { navController.navigate(Rutas.hablar()) },
+                        onBuscar = { navController.navigate(Rutas.BUSCAR) },
+                        onHistorial = { navController.navigate(Rutas.HISTORIAL) },
+                        onAyuda = { navController.navigate(Rutas.AYUDA) },
+                        onPerfil = { navController.navigate(Rutas.PERFIL) }
+                    )
+                }
+                composable(Rutas.ESCRIBIR) {
+                    val vm: PhraseViewModel = viewModel(factory = FabricaViewModels.Factory)
+                    EscribirScreen(
+                        viewModel = vm,
+                        onVolver = { navController.popBackStack() },
+                        onVolverMenu = { navController.volverAlMenu() }
+                    )
+                }
+                composable(
+                    Rutas.HABLAR,
+                    arguments = listOf(navArgument(Rutas.ARG_FRASE) { type = NavType.StringType; nullable = true })
+                ) { entrada ->
+                    val vm: PhraseViewModel = viewModel(factory = FabricaViewModels.Factory)
+                    val context = LocalContext.current
+                    // Palette se calcula una vez por pantalla, fuera del hilo principal
+                    val colores by produceState(emptyMap<String, Color>()) {
+                        value = ColoresCategoria.calcular(context, FrasesRapidas.nombres)
+                    }
+                    HablarScreen(
+                        viewModel = vm,
+                        onVolver = { navController.popBackStack() },
+                        onVolverMenu = { navController.volverAlMenu() },
+                        fraseInicial = entrada.arguments?.getString(Rutas.ARG_FRASE),
+                        colorCategoria = { colores[it] }
+                    )
+                }
+                composable(Rutas.BUSCAR) {
+                    val vm: DeviceViewModel = viewModel(factory = FabricaViewModels.Factory)
+                    BuscarDispositivoScreen(
+                        viewModel = vm,
+                        onVolver = { navController.popBackStack() },
+                        contenidoExtra = contenidoBuscar
+                    )
+                }
+                composable(Rutas.HISTORIAL) {
+                    val vm: HistorialViewModel = viewModel(factory = FabricaViewModels.Factory)
+                    HistorialScreen(viewModel = vm, onVolver = { navController.popBackStack() })
+                }
+                composable(Rutas.AYUDA) {
+                    AyudaScreen(
+                        onVolver = { navController.popBackStack() },
+                        onVerTutorial = { navController.navigate(Rutas.TUTORIAL) { launchSingleTop = true } }
+                    )
+                }
+                composable(Rutas.TUTORIAL) {
+                    val vm: TutorialViewModel = viewModel(factory = FabricaViewModels.Factory)
+                    // Al terminar vuelve a donde se abrió: el menú (primer inicio) o la Ayuda
+                    TutorialScreen(onTerminar = {
+                        vm.completar()
+                        navController.popBackStack()
+                    })
+                }
+                composable(Rutas.PERFIL) {
+                    val vm: ProfileViewModel = viewModel(factory = FabricaViewModels.Factory)
+                    ProfileScreen(viewModel = vm, onVolver = { navController.popBackStack() })
+                }
             }
         }
     }

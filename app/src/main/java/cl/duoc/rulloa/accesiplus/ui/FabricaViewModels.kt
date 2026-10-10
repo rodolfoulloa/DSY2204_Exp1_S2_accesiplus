@@ -12,6 +12,7 @@ import cl.duoc.rulloa.accesiplus.ui.devices.DeviceViewModel
 import cl.duoc.rulloa.accesiplus.ui.historial.HistorialViewModel
 import cl.duoc.rulloa.accesiplus.ui.phrases.PhraseViewModel
 import cl.duoc.rulloa.accesiplus.ui.profile.ProfileViewModel
+import cl.duoc.rulloa.accesiplus.ui.tutorial.TutorialViewModel
 
 /** Obtiene el contenedor de dependencias desde la Application. */
 private fun CreationExtras.contenedor(): AppContainer =
@@ -38,6 +39,10 @@ object FabricaViewModels {
         initializer {
             val c = contenedor()
             HistorialViewModel(c.authRepository, c.historialRepository, c.voz)
+        }
+        initializer {
+            val c = contenedor()
+            TutorialViewModel(c.authRepository, c.preferencias)
         }
         initializer {
             val c = contenedor()

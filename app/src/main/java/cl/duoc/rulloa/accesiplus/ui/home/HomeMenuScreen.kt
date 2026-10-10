@@ -1,6 +1,8 @@
 package cl.duoc.rulloa.accesiplus.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.EditNote
@@ -29,12 +32,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cl.duoc.rulloa.accesiplus.ui.components.PantallaBase
+import cl.duoc.rulloa.accesiplus.ui.profile.EstadoSaludo
 import cl.duoc.rulloa.accesiplus.ui.profile.ProfileViewModel
 
 /** Clases de tamaño de ventana calculadas en MainActivity (WindowSizeClass de Material 3). */
@@ -65,9 +73,10 @@ fun HomeMenuScreen(
     onHablar: () -> Unit,
     onBuscar: () -> Unit,
     onHistorial: () -> Unit,
+    onAyuda: () -> Unit,
     onPerfil: () -> Unit
 ) {
-    val perfil by perfilViewModel.perfil.collectAsStateWithLifecycle()
+    val saludo by perfilViewModel.saludo.collectAsStateWithLifecycle()
     val opciones = listOf(
         OpcionMenu("Escribir", "Convierte la voz en texto grande", Icons.Filled.EditNote, "menu_escribir",
             { MaterialTheme.colorScheme.primaryContainer }, onEscribir),
@@ -75,6 +84,8 @@ fun HomeMenuScreen(
             { MaterialTheme.colorScheme.secondaryContainer }, onHablar),
         OpcionMenu("Historial", "Lo que escuchaste y dijiste", Icons.Filled.History, "menu_historial",
             { MaterialTheme.colorScheme.surfaceVariant }, onHistorial),
+        OpcionMenu("Ayuda", "Paso a paso y consejos", Icons.AutoMirrored.Filled.HelpOutline, "menu_ayuda",
+            { MaterialTheme.colorScheme.surfaceVariant }, onAyuda),
         OpcionMenu("Buscar dispositivo", "Dónde dejaste tu audífono o teléfono", Icons.Filled.LocationOn, "menu_buscar",
             { MaterialTheme.colorScheme.tertiaryContainer }, onBuscar),
         OpcionMenu("Mi perfil", "Tus datos y cerrar sesión", Icons.Filled.AccountCircle, "menu_perfil",
@@ -83,11 +94,7 @@ fun HomeMenuScreen(
     val columnas = columnasMenu(tamano)
 
     PantallaBase(titulo = "AccesiPlus", onVolver = null) {
-        Text(
-            "Hola${perfil?.name?.takeIf { it.isNotBlank() }?.let { ", ${it.substringBefore(' ')}" } ?: ""}",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.testTag("saludo_home")
-        )
+        Saludo(saludo)
         Text("¿Qué quieres hacer?", style = MaterialTheme.typography.titleMedium)
         opciones.chunked(columnas).forEach { fila ->
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
@@ -95,6 +102,30 @@ fun HomeMenuScreen(
                 // Completa la fila para que todas las tarjetas tengan el mismo ancho
                 repeat(columnas - fila.size) { Spacer(Modifier.weight(1f)) }
             }
+        }
+    }
+}
+
+/**
+ * Paso 2: saludo con el nombre. Mientras carga se ve un bloque gris del tamaño del nombre
+ * y TalkBack lee "Cargando tu nombre", en vez de un "Hola" que luego cambia sin aviso.
+ */
+@Composable
+private fun Saludo(estado: EstadoSaludo) {
+    Box(Modifier.heightIn(min = 40.dp).testTag("saludo_home"), contentAlignment = Alignment.CenterStart) {
+        when (estado) {
+            EstadoSaludo.Cargando -> Box(
+                Modifier
+                    .size(width = 200.dp, height = 36.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
+                    .semantics { contentDescription = "Cargando tu nombre" }
+                    .testTag("saludo_cargando")
+            )
+            is EstadoSaludo.Listo -> Text(
+                estado.texto,
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite; heading() }
+            )
         }
     }
 }
