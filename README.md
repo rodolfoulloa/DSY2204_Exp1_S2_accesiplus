@@ -7,6 +7,47 @@ cotidiano, guardar frases y registrar dónde quedaron sus dispositivos (audífon
 - Paquete / applicationId: `cl.duoc.rulloa.accesiplus`
 - minSdk 24 · targetSdk 37
 - Back end: Firebase Authentication (correo/contraseña) + Realtime Database (proyecto `accesiplus`)
+- Versión actual: **1.1.0** (`versionCode 3`)
+
+## Descarga e instalación
+
+La app se distribuye con **Firebase App Distribution**:
+
+**[Descargar AccesiPlus en App Distribution](https://appdistribution.firebase.google.com/testerapps/1:147620891282:android:df5fbfbc1ecb8f4d8db44b/releases/4amib66duenvo?utm_source=firebase-console)**
+
+1. Abre el enlace desde el teléfono Android e inicia sesión con la cuenta de Google que recibió
+   la invitación de prueba (si no la tienes, pídela al autor del proyecto).
+2. Acepta la invitación y toca **Descargar** en la versión más reciente.
+3. Abre el archivo descargado. Android pedirá permiso para instalar apps de orígenes desconocidos:
+   - Android 8 o superior: **Ajustes → Apps → Acceso especial → Instalar apps desconocidas**,
+     elige el navegador (por ejemplo, Chrome) y activa **Permitir de esta fuente**.
+   - Android 7: **Ajustes → Seguridad → Orígenes desconocidos**.
+4. Vuelve atrás y toca **Instalar**. Si ya tenías una versión anterior, se instala como
+   actualización y conservas tus datos (el APK está firmado con el mismo certificado).
+5. Abre AccesiPlus e inicia sesión o crea una cuenta. Se necesita conexión a internet.
+
+Requisitos: Android 7.0 (API 24) o superior.
+
+## Novedades de la versión
+
+### 1.1.0
+
+- **Historial automático**: Escribir guarda cada texto escuchado y Hablar cada frase dicha en voz
+  alta, sin tocar "Guardar". Se ve por día, con filtros Todos / Escribir / Hablar, opción de
+  repetir en voz alta y de eliminar con "Deshacer". Funciona sin conexión.
+- **Ayuda y tutorial**: tutorial de bienvenida de cuatro páginas la primera vez que entras, pantalla
+  de Ayuda con el paso a paso de cada función, consejos para el micrófono y qué hacer sin conexión
+  (desde el menú o desde el ícono **?** de la barra superior).
+- **Guía paso a paso** en Escribir y Hablar, saludo con tu nombre y botón **Volver al menú** al
+  terminar cada acción.
+- **Vibración**: un toque corto al terminar, doble al guardar y largo ante un error, para no depender
+  del sonido. Se puede apagar en **Mi perfil → Vibración**.
+
+### 1.0.0
+
+- Inicio de sesión, registro y recuperación de contraseña con Firebase.
+- Escribir (voz a texto), Hablar (texto a voz con frases rápidas y propias), Buscar dispositivo con
+  ubicación, widget "Frase rápida" y diseño adaptable a teléfono y tablet.
 
 ## Arquitectura
 
@@ -89,4 +130,5 @@ keyPassword=…
 ```
 
 Si `keystore.properties` no existe, `assembleRelease` genera un APK sin firmar.
-Versión publicada: `versionCode 2`, `versionName "1.0.0"`.
+Versión publicada: `versionCode 3`, `versionName "1.1.0"`. Todas las versiones se firman con el
+mismo certificado (`CN=Rodolfo Ulloa, OU=DSY2204`), requisito para instalarse como actualización.
