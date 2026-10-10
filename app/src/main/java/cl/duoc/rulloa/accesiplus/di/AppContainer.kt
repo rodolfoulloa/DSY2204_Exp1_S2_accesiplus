@@ -16,8 +16,10 @@ import cl.duoc.rulloa.accesiplus.data.repository.AuthRepository
 import cl.duoc.rulloa.accesiplus.data.repository.DeviceRepository
 import cl.duoc.rulloa.accesiplus.data.repository.FirebaseAuthRepository
 import cl.duoc.rulloa.accesiplus.data.repository.FirebaseDeviceRepository
+import cl.duoc.rulloa.accesiplus.data.repository.FirebaseHistorialRepository
 import cl.duoc.rulloa.accesiplus.data.repository.FirebasePhraseRepository
 import cl.duoc.rulloa.accesiplus.data.repository.FirebaseUserRepository
+import cl.duoc.rulloa.accesiplus.data.repository.HistorialRepository
 import cl.duoc.rulloa.accesiplus.data.repository.PhraseRepository
 import cl.duoc.rulloa.accesiplus.data.repository.UserRepository
 import com.google.firebase.Firebase
@@ -36,6 +38,7 @@ class AppContainer(context: Context) {
     val userRepository: UserRepository by lazy { FirebaseUserRepository(rutas) }
     val phraseRepository: PhraseRepository by lazy { FirebasePhraseRepository(rutas) }
     val deviceRepository: DeviceRepository by lazy { FirebaseDeviceRepository(rutas) }
+    val historialRepository: HistorialRepository by lazy { FirebaseHistorialRepository(rutas) }
     val connectivityObserver: ConnectivityObserver by lazy { AndroidConnectivityObserver(appContext) }
     val voz: Voz by lazy { TtsService(appContext) }
     val ubicacion: UbicacionProvider by lazy { FusedUbicacionProvider(appContext) }
