@@ -72,3 +72,29 @@ fun deviceFromMap(id: String, map: Map<*, *>?): Device? {
         createdAt = (map["createdAt"] as? Number)?.toLong() ?: 0L
     )
 }
+
+/**
+ * [marcaTiempo] permite que el repositorio envíe ServerValue.TIMESTAMP (la hora la pone
+ * el servidor) sin que este archivo dependa de Firebase y siga probándose con JUnit puro.
+ * Los enum se guardan por nombre ("ESCRIBIR"), que es lo que validan las reglas.
+ */
+fun RegistroHistorial.toMap(marcaTiempo: Any = timestamp): Map<String, Any?> = mapOf(
+    "tipo" to tipo.name,
+    "texto" to texto,
+    "origen" to origen?.name,
+    "timestamp" to marcaTiempo
+)
+
+/** Descarta registros sin texto o con un tipo desconocido (por ejemplo, de una versión futura). */
+fun registroHistorialFromMap(id: String, map: Map<*, *>?): RegistroHistorial? {
+    if (map == null) return null
+    val texto = map["texto"] as? String ?: return null
+    val tipo = TipoHistorial.entries.firstOrNull { it.name == map["tipo"] } ?: return null
+    return RegistroHistorial(
+        id = id,
+        tipo = tipo,
+        texto = texto,
+        origen = OrigenHistorial.entries.firstOrNull { it.name == map["origen"] },
+        timestamp = (map["timestamp"] as? Number)?.toLong() ?: 0L
+    )
+}

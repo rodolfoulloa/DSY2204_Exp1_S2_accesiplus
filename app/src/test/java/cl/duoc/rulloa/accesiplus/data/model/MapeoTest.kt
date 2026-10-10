@@ -41,6 +41,37 @@ class MapeoTest {
     }
 
     @Test
+    fun `registro de historial ida y vuelta guarda los enum por nombre`() {
+        val r = RegistroHistorial("h1", TipoHistorial.HABLAR, "Necesito ayuda", OrigenHistorial.WIDGET, 1_700_000_000_000L)
+        val mapa = r.toMap()
+        assertEquals("HABLAR", mapa["tipo"])
+        assertEquals("WIDGET", mapa["origen"])
+        assertEquals(r, registroHistorialFromMap("h1", mapa))
+    }
+
+    @Test
+    fun `registro sin origen y con timestamp como Double`() {
+        val r = registroHistorialFromMap("h2", mapOf("tipo" to "ESCRIBIR", "texto" to "Hola", "timestamp" to 5.0))!!
+        assertEquals(TipoHistorial.ESCRIBIR, r.tipo)
+        assertNull(r.origen)
+        assertEquals(5L, r.timestamp)
+    }
+
+    @Test
+    fun `registro sin texto o con tipo desconocido se descarta`() {
+        assertNull(registroHistorialFromMap("x", mapOf("tipo" to "HABLAR")))
+        assertNull(registroHistorialFromMap("x", mapOf("tipo" to "DIBUJAR", "texto" to "Hola")))
+        assertNull(registroHistorialFromMap("x", null))
+    }
+
+    @Test
+    fun `toMap acepta una marca de tiempo del servidor`() {
+        val marcaServidor = mapOf(".sv" to "timestamp")
+        val mapa = RegistroHistorial(texto = "Hola").toMap(marcaTiempo = marcaServidor)
+        assertEquals(marcaServidor, mapa["timestamp"])
+    }
+
+    @Test
     fun `perfil ida y vuelta`() {
         val p = UserProfile("Ana", "ana@correo.cl", "Cuidador", "Femenino", 123L)
         assertEquals(p, userProfileFromMap(p.toMap()))
