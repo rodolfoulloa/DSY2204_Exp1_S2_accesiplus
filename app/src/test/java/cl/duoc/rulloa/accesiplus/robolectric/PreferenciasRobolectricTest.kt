@@ -45,6 +45,15 @@ class PreferenciasRobolectricTest {
     }
 
     @Test
+    fun `la vibracion viene activada y el cambio se guarda`() {
+        assertTrue(prefs.vibracionActiva())
+        prefs.cambiarVibracion(false)
+        assertFalse(PreferenciasApp(context).vibracionActiva())
+        prefs.cambiarVibracion(true)
+        assertTrue(PreferenciasApp(context).vibracionActiva())
+    }
+
+    @Test
     fun `reiniciar vuelve a mostrar el tutorial`() {
         prefs.marcarTutorialVisto("u1")
         prefs.reiniciarTutorial("u1")

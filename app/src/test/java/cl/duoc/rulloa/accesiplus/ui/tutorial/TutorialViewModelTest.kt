@@ -21,6 +21,8 @@ class TutorialViewModelTest {
         override fun tutorialVisto(uid: String) = uid in vistos
         override fun marcarTutorialVisto(uid: String) { vistos += uid }
         override fun reiniciarTutorial(uid: String) { vistos -= uid }
+        override fun vibracionActiva() = true
+        override fun cambiarVibracion(activa: Boolean) = Unit
     }
 
     private fun auth(uid: String?): AuthRepository = mock { on { uidActual } doReturn uid }

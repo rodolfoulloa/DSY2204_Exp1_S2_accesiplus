@@ -3,6 +3,7 @@ package cl.duoc.rulloa.accesiplus.di
 import android.content.Context
 import cl.duoc.rulloa.accesiplus.data.connectivity.AndroidConnectivityObserver
 import cl.duoc.rulloa.accesiplus.data.connectivity.ConnectivityObserver
+import cl.duoc.rulloa.accesiplus.data.haptica.Haptica
 import cl.duoc.rulloa.accesiplus.data.local.BaseLocal
 import cl.duoc.rulloa.accesiplus.data.local.PhraseSync
 import cl.duoc.rulloa.accesiplus.data.local.Preferencias
@@ -45,6 +46,9 @@ class AppContainer(context: Context) {
     val voz: Voz by lazy { TtsService(appContext) }
     val ubicacion: UbicacionProvider by lazy { FusedUbicacionProvider(appContext) }
     val preferencias: Preferencias by lazy { PreferenciasApp(appContext) }
+
+    // Lee el interruptor en cada aviso: el cambio en Perfil se aplica de inmediato
+    val haptica: Haptica by lazy { Haptica(appContext) { preferencias.vibracionActiva() } }
 
     // Caché local de frases (Room) que alimenta el ContentProvider y el widget
     val baseLocal: BaseLocal by lazy { BaseLocal.obtener(appContext) }
