@@ -41,7 +41,10 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cl.duoc.rulloa.accesiplus.data.model.Phrase
+import cl.duoc.rulloa.accesiplus.domain.GuiaAccion
 import cl.duoc.rulloa.accesiplus.ui.components.BotonGrande
+import cl.duoc.rulloa.accesiplus.ui.components.BotonVolverMenu
+import cl.duoc.rulloa.accesiplus.ui.components.GuiaPaso
 import cl.duoc.rulloa.accesiplus.ui.components.MostrarMensaje
 import cl.duoc.rulloa.accesiplus.ui.components.PantallaBase
 import cl.duoc.rulloa.accesiplus.ui.components.TextoError
@@ -56,7 +59,7 @@ import cl.duoc.rulloa.accesiplus.ui.phrases.TarjetaFrase
  * o el usuario lo escribe con el teclado. Los textos se pueden guardar (CRUD en users/{uid}/phrases).
  */
 @Composable
-fun EscribirScreen(viewModel: PhraseViewModel, onVolver: () -> Unit) {
+fun EscribirScreen(viewModel: PhraseViewModel, onVolver: () -> Unit, onVolverMenu: () -> Unit = onVolver) {
     val context = LocalContext.current
     val reconocedor = remember { ReconocedorVoz(context) }
     DisposableEffect(Unit) { onDispose { reconocedor.liberar() } }
@@ -79,11 +82,18 @@ fun EscribirScreen(viewModel: PhraseViewModel, onVolver: () -> Unit) {
         if (ok) reconocedor.iniciar(agregar)
     }
 
+    val etapa = GuiaAccion.etapaEscribir(
+        escuchando = reconocedor.escuchando,
+        procesando = reconocedor.procesando,
+        hayError = reconocedor.error != null,
+        completada = ui.completada
+    )
+
     PantallaBase(titulo = "Escribir", onVolver = onVolver, snackbar = snackbar) {
-        Text(
-            "Toca \"Escuchar\" y acerca el teléfono a quien te habla. Verás sus palabras aquí.",
-            style = MaterialTheme.typography.bodyLarge
-        )
+        // Paso 6: indicación del siguiente paso según el estado del reconocedor
+        GuiaPaso(etapa, GuiaAccion.mensajeEscribir(etapa))
+        // Paso 8: terminada una transcripción se ofrece volver al menú
+        if (ui.completada && !reconocedor.escuchando) BotonVolverMenu(onVolverMenu)
 
         // Texto transcrito en letra grande
         Card(
@@ -94,6 +104,10 @@ fun EscribirScreen(viewModel: PhraseViewModel, onVolver: () -> Unit) {
                 when {
                     reconocedor.escuchando -> Text(
                         "Escuchando…", style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    reconocedor.procesando -> Text(
+                        "Procesando…", style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                     texto.isEmpty() -> Text("Aquí aparecerá el texto.", style = MaterialTheme.typography.bodyLarge)

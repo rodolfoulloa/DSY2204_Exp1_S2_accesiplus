@@ -46,6 +46,9 @@ import cl.duoc.rulloa.accesiplus.data.model.OrigenHistorial
 import cl.duoc.rulloa.accesiplus.data.model.Phrase
 import cl.duoc.rulloa.accesiplus.data.tts.EstadoTts
 import cl.duoc.rulloa.accesiplus.data.tts.TtsService
+import cl.duoc.rulloa.accesiplus.domain.GuiaAccion
+import cl.duoc.rulloa.accesiplus.ui.components.BotonVolverMenu
+import cl.duoc.rulloa.accesiplus.ui.components.GuiaPaso
 import cl.duoc.rulloa.accesiplus.domain.FiltrosFrases
 import cl.duoc.rulloa.accesiplus.domain.OrdenFrases
 import cl.duoc.rulloa.accesiplus.ui.components.ALTO_TACTIL
@@ -68,12 +71,14 @@ import cl.duoc.rulloa.accesiplus.ui.phrases.TarjetaFrase
 fun HablarScreen(
     viewModel: PhraseViewModel,
     onVolver: () -> Unit,
+    onVolverMenu: () -> Unit = onVolver,
     fraseInicial: String? = null,
     colorCategoria: (String) -> Color? = { null }
 ) {
     val context = LocalContext.current
     val frases by viewModel.frases.collectAsStateWithLifecycle()
     val estado by viewModel.estadoVoz.collectAsStateWithLifecycle()
+    val hablando by viewModel.hablando.collectAsStateWithLifecycle()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     var texto by rememberSaveable { mutableStateOf("") }
     var categoria by rememberSaveable { mutableStateOf(FrasesRapidas.nombres.first()) }
@@ -94,7 +99,19 @@ fun HablarScreen(
 
     val propias = frases.filter { it.category != Phrase.CATEGORIA_ESCRITA }
 
+    val preparando = estado == EstadoTts.INICIANDO
+    val etapa = GuiaAccion.etapaHablar(
+        preparando = preparando,
+        hablando = hablando,
+        hayError = ui.error != null || estado == EstadoTts.SIN_MOTOR,
+        completada = ui.completada
+    )
+
     PantallaBase(titulo = "Hablar", onVolver = onVolver, snackbar = snackbar) {
+        // Paso 6: indicación del siguiente paso según el estado de la voz
+        GuiaPaso(etapa, GuiaAccion.mensajeHablar(etapa, hayTexto = texto.isNotBlank(), preparando = preparando))
+        // Paso 8: después de decir algo se ofrece volver al menú
+        if (ui.completada && !hablando) BotonVolverMenu(onVolverMenu)
         EstadoVoz(estado, onInstalar = {
             // Algunos fabricantes no traen pantalla de instalación de voces
             try { context.startActivity(TtsService.intentInstalarVoces()) } catch (_: ActivityNotFoundException) { }

@@ -32,7 +32,9 @@ data class PhraseUiState(
     val error: String? = null,
     val mensaje: String? = null,
     /** Frase que se está mostrando en grande en pantalla. */
-    val enPantalla: String? = null
+    val enPantalla: String? = null,
+    /** true después de una transcripción final o de decir algo en voz alta: se ofrece "Volver al menú". */
+    val completada: Boolean = false
 )
 
 /**
@@ -52,6 +54,7 @@ class PhraseViewModel(
     val ui: StateFlow<PhraseUiState> = _ui.asStateFlow()
 
     val estadoVoz: StateFlow<EstadoTts> = voz.estado
+    val hablando: StateFlow<Boolean> = voz.hablando
 
     val frases: StateFlow<List<Phrase>> = auth.estadoSesion()
         .flatMapLatest { uid -> if (uid == null) flowOf(emptyList()) else repo.observarFrases(uid) }
@@ -104,7 +107,8 @@ class PhraseViewModel(
         frase: Phrase? = null,
         origen: OrigenHistorial = if (frase != null) OrigenHistorial.FRASE_GUARDADA else OrigenHistorial.TEXTO_LIBRE
     ) {
-        _ui.update { it.copy(enPantalla = texto) }
+        // Un intento nuevo limpia el error anterior: la guía no queda pegada en "Hubo un problema"
+        _ui.update { it.copy(enPantalla = texto, completada = texto.isNotBlank(), error = null) }
         if (!voz.hablar(texto)) {
             _ui.update { it.copy(error = "La voz no está disponible. La frase se muestra en pantalla.") }
         }
@@ -116,7 +120,10 @@ class PhraseViewModel(
     }
 
     /** Escribir: se llama solo con el resultado final del reconocedor de voz (no con los parciales). */
-    fun registrarEscrito(texto: String) = registrarEnHistorial(TipoHistorial.ESCRIBIR, texto, origen = null)
+    fun registrarEscrito(texto: String) {
+        if (texto.isNotBlank()) _ui.update { it.copy(completada = true) }
+        registrarEnHistorial(TipoHistorial.ESCRIBIR, texto, origen = null)
+    }
 
     private fun registrarEnHistorial(tipo: TipoHistorial, texto: String, origen: OrigenHistorial?) {
         val uid = auth.uidActual ?: return

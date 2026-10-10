@@ -16,6 +16,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Hearing
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,9 +37,11 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -41,9 +50,16 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import cl.duoc.rulloa.accesiplus.domain.EtapaAccion
 
 /** Alto mínimo de los controles táctiles: 56dp (supera los 48dp que pide Material). */
 val ALTO_TACTIL = 56.dp
+
+/**
+ * Acción para abrir la Ayuda desde la barra superior. La entrega el NavGraph solo con sesión
+ * activa: así las pantallas no necesitan un parámetro extra y Login/Registro no la muestran.
+ */
+val LocalAbrirAyuda = staticCompositionLocalOf<(() -> Unit)?> { null }
 
 /** Botón principal grande, de ancho completo. */
 @Composable
@@ -127,7 +143,14 @@ fun PantallaBase(
                         }
                     }
                 },
-                actions = { acciones() },
+                actions = {
+                    acciones()
+                    LocalAbrirAyuda.current?.let { abrirAyuda ->
+                        IconButton(onClick = abrirAyuda, modifier = Modifier.size(ALTO_TACTIL).testTag("boton_ayuda")) {
+                            Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = "Ayuda")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -155,6 +178,48 @@ fun PantallaBase(
             )
         }
     }
+}
+
+/**
+ * Indicación del siguiente paso (acción guiada). liveRegion hace que TalkBack la lea
+ * cada vez que cambia la etapa; el ícono refuerza el estado sin depender del color.
+ */
+@Composable
+fun GuiaPaso(etapa: EtapaAccion, mensaje: String, modifier: Modifier = Modifier) {
+    val (icono, fondo) = when (etapa) {
+        EtapaAccion.INICIO -> Icons.Filled.TouchApp to MaterialTheme.colorScheme.surfaceVariant
+        EtapaAccion.ESCUCHANDO -> Icons.Filled.Hearing to MaterialTheme.colorScheme.primaryContainer
+        EtapaAccion.PROCESANDO -> Icons.Filled.HourglassTop to MaterialTheme.colorScheme.primaryContainer
+        EtapaAccion.LISTO -> Icons.Filled.CheckCircle to MaterialTheme.colorScheme.secondaryContainer
+        EtapaAccion.ERROR -> Icons.Filled.ErrorOutline to MaterialTheme.colorScheme.tertiaryContainer
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(fondo, MaterialTheme.shapes.medium)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
+            .testTag("guia_paso"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // contentColorFor elige el color "on" del tema para ese fondo: mantiene el contraste en modo oscuro
+        val texto = contentColorFor(fondo)
+        Icon(icono, contentDescription = null, tint = texto, modifier = Modifier.size(32.dp))
+        Text(mensaje, style = MaterialTheme.typography.bodyLarge, color = texto)
+    }
+}
+
+/** Botón explícito para terminar y volver al menú principal (paso 8 del flujo). */
+@Composable
+fun BotonVolverMenu(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    BotonGrande(
+        texto = "Volver al menú",
+        icono = Icons.Filled.Home,
+        onClick = onClick,
+        secundario = true,
+        modifier = modifier.testTag("boton_volver_menu")
+    )
 }
 
 /** Muestra un mensaje en el snackbar y lo marca como leído. */

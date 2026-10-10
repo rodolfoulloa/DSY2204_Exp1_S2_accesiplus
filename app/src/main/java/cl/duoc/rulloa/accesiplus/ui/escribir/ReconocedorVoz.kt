@@ -20,6 +20,9 @@ class ReconocedorVoz(private val context: Context) {
 
     var escuchando by mutableStateOf(false)
         private set
+    /** Entre el fin del habla y el resultado final: el servicio está convirtiendo la voz en texto. */
+    var procesando by mutableStateOf(false)
+        private set
     var parcial by mutableStateOf("")
         private set
     var error by mutableStateOf<String?>(null)
@@ -34,13 +37,17 @@ class ReconocedorVoz(private val context: Context) {
         }
         error = null
         parcial = ""
+        procesando = false
         val sr = reconocedor ?: SpeechRecognizer.createSpeechRecognizer(context).also { reconocedor = it }
         sr.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) { escuchando = true }
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() { escuchando = false }
+            override fun onEndOfSpeech() {
+                escuchando = false
+                procesando = true
+            }
             override fun onEvent(eventType: Int, params: Bundle?) {}
 
             override fun onPartialResults(partialResults: Bundle?) {
@@ -50,6 +57,7 @@ class ReconocedorVoz(private val context: Context) {
 
             override fun onResults(results: Bundle?) {
                 escuchando = false
+                procesando = false
                 val texto = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
                 parcial = ""
                 if (!texto.isNullOrBlank()) onResultado(texto)
@@ -57,6 +65,7 @@ class ReconocedorVoz(private val context: Context) {
 
             override fun onError(codigo: Int) {
                 escuchando = false
+                procesando = false
                 error = mensajeError(codigo)
             }
         })
@@ -71,12 +80,15 @@ class ReconocedorVoz(private val context: Context) {
 
     fun detener() {
         reconocedor?.stopListening()
+        // Al detener, el servicio igual entrega el resultado (onResults) o un error (onError)
+        if (escuchando) procesando = true
         escuchando = false
     }
 
     fun liberar() {
         reconocedor?.destroy()
         reconocedor = null
+        procesando = false
     }
 
     fun limpiarError() { error = null }

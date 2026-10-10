@@ -18,6 +18,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -54,7 +57,10 @@ class PhraseViewModelTest {
             on { uidActual } doReturn "u1"
         }
         repo = mock { on { observarFrases("u1") } doReturn flowOf(guardadas) }
-        voz = mock { on { estado } doReturn MutableStateFlow(EstadoTts.LISTO) }
+        voz = mock {
+            on { estado } doReturn MutableStateFlow(EstadoTts.LISTO)
+            on { hablando } doReturn MutableStateFlow(false)
+        }
         historial = mock()
         runBlocking { whenever(historial.agregar(any(), any())).thenReturn(Result.success("h0")) }
         vm =PhraseViewModel(auth, repo, voz, historial, FiltroDuplicados(reloj = { ahora }))
@@ -156,6 +162,26 @@ class PhraseViewModelTest {
         ahora = 10_000
         vm.registrarEscrito("Hola") // ya pasó la ventana: es una solicitud nueva
         verify(historial, times(2)).agregar(any(), any())
+    }
+
+    @Test
+    fun `completar una accion habilita volver al menu`() = runTest {
+        whenever(voz.hablar(any())).thenReturn(true)
+        assertFalse(vm.ui.value.completada)
+        vm.registrarEscrito("   ")
+        assertFalse(vm.ui.value.completada) // texto vacío: no hay acción completada
+        vm.registrarEscrito("Buenas tardes")
+        assertTrue(vm.ui.value.completada)
+    }
+
+    @Test
+    fun `un intento nuevo de hablar limpia el error anterior`() = runTest {
+        whenever(voz.hablar(any())).thenReturn(false, true)
+        vm.hablar("Hola")
+        assertEquals("La voz no está disponible. La frase se muestra en pantalla.", vm.ui.value.error)
+        vm.hablar("Chao")
+        assertNull(vm.ui.value.error)
+        assertTrue(vm.ui.value.completada)
     }
 
     @Test
